@@ -1,0 +1,20 @@
+import asyncio
+from aiogram import Dispatcher
+from app.handlers import router
+from app.core.db import database
+from app.core.bot import bot
+from aiogram.fsm.storage.redis import RedisStorage
+
+
+storage = RedisStorage.from_url("redis://localhost:6379")
+dp = Dispatcher(storage=storage)
+
+
+
+async def main():
+    dp.include_router(router)
+    await database.connect()
+    await dp.start_polling(bot)
+
+if __name__ == '__main__':
+    asyncio.run(main())

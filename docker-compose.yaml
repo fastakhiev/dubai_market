@@ -1,0 +1,21 @@
+services:
+  postgresdb:
+    image: postgres:latest
+    container_name: db
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./dockerfiles/postgresql/data:/var/lib/postgresql/data
+    restart: on-failure
+
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis
+    env_file:
+      - .env
+    volumes:
+      - ./dockerfiles/redis/data:/var/lib/redis/data
+    ports:
+      - "6379:6379"
