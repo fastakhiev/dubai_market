@@ -12,7 +12,5 @@ database = Database(database_url)
 metadata = MetaData()
 
 base_ormar_config = ormar.OrmarConfig(
-    metadata=metadata,
-    database=database,
-    engine=create_engine(database_url)
+    metadata=metadata, database=database, engine=create_engine(database_url)
 )

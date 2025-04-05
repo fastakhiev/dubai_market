@@ -1,5 +1,12 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import (
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+)
 
-buyer = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="Поиск",)]
-])
+buyer = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Поиск", switch_inline_query_current_chat="")]
+    ]
+)

@@ -12,4 +12,6 @@ class User(ormar.Model):
     phone: str = ormar.String(max_length=100, nullable=False)
     role: str = ormar.String(max_length=10, nullable=False)
     passport: str = ormar.String(max_length=1000, nullable=True)
-    created_at: datetime.datetime = ormar.DateTime(nullable=False, default=datetime.datetime.now)
+    created_at: datetime.datetime = ormar.DateTime(
+        nullable=False, default=datetime.datetime.now
+    )

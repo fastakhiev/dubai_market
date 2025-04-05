@@ -10,11 +10,11 @@ storage = RedisStorage.from_url("redis://localhost:6379")
 dp = Dispatcher(storage=storage)
 
 
-
 async def main():
     dp.include_router(router)
     await database.connect()
     await dp.start_polling(bot)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     asyncio.run(main())

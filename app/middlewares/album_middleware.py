@@ -4,6 +4,7 @@ from aiogram.dispatcher.middlewares.base import BaseMiddleware
 from collections import defaultdict
 from typing import Callable, Dict, Awaitable, Any
 
+
 class AlbumMiddleware(BaseMiddleware):
     """Middleware для сбора всех фото в альбоме"""
 
@@ -12,8 +13,12 @@ class AlbumMiddleware(BaseMiddleware):
         self.albums = defaultdict(list)
         self.queues = defaultdict(asyncio.Queue)
 
-    async def __call__(self, handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
-                       event: Message, data: Dict[str, Any]) -> Any:
+    async def __call__(
+        self,
+        handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+        event: Message,
+        data: Dict[str, Any],
+    ) -> Any:
         media_group_id = event.media_group_id
 
         if media_group_id:

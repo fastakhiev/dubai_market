@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 
 from app.keyboards.signup import main as kb_signup
 from app.keyboards.seller import seller as kb_seller
+from app.keyboards.buyer import buyer as kb_buyer
 from app.states.states import SignUp, CreateShop
 from app.models.users import User
 from app.models.shops import Shop
@@ -18,31 +19,37 @@ async def cmd_start(message: Message, state: FSMContext):
     try:
         user = await User.objects.get(telegram_id=str(message.from_user.id))
         if user.role == "seller":
-            await message.answer(f"С возвращением {user.full_name}", reply_markup=kb_seller)
+            await message.answer(
+                f"С возвращением {user.full_name}", reply_markup=kb_seller
+            )
         else:
-            await message.answer(f"С возвращением {user.full_name}")
+            await message.answer(
+                f"С возвращением {user.full_name}", reply_markup=kb_buyer
+            )
     except ormar.exceptions.NoMatch:
         await state.set_state(SignUp.telegram_id)
         await state.update_data(telegram_id=message.from_user.id)
-        await message.answer(f"Привет выбери тип своего аккаунта",reply_markup=kb_signup)
+        await message.answer(
+            f"Привет выбери тип своего аккаунта", reply_markup=kb_signup
+        )
 
 
-@router.callback_query(F.data == 'seller')
+@router.callback_query(F.data == "seller")
 async def seller(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.set_state(SignUp.role)
-    await state.update_data(role='seller')
+    await state.update_data(role="seller")
     await state.set_state(SignUp.full_name)
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.edit_text("Вы продавец")
     await callback.message.answer("Введите ваше полное имя")
 
 
-@router.callback_query(F.data == 'buyer')
+@router.callback_query(F.data == "buyer")
 async def buyer(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.set_state(SignUp.role)
-    await state.update_data(role='buyer')
+    await state.update_data(role="buyer")
     await state.set_state(SignUp.full_name)
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.edit_text("Вы покупатель")
