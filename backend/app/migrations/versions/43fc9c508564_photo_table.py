@@ -24,7 +24,7 @@ def upgrade() -> None:
         "photos",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("file_id", sa.String(), nullable=False),
-        sa.Column("file_path", sa.String(), nullable=False),
+        sa.Column("file_name", sa.String(), nullable=False),
         sa.PrimaryKeyConstraint("id")
     )
 

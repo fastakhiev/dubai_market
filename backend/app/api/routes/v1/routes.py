@@ -43,7 +43,7 @@ async def upload_image(
 
         await Photo.objects.create(
             file_id=upload_data.file_id,
-            file_path=filename
+            file_name=filename
         )
 
         return {"status": "ok", "filename": filename}
@@ -55,7 +55,7 @@ async def get_image_by_id(
 ):
     file_info = await Photo.objects.get(file_id=file_id)
     url = minio_client.presigned_get_object(
-        config.MINIO_BUCKET_PREVIEW, file_info.file_path,
+        config.MINIO_BUCKET_PREVIEW, file_info.file_name,
     )
     return {
         "url": url
