@@ -33,6 +33,7 @@ def upgrade():
         ),
         sa.Column("status", sa.String(50), nullable=False, default="active"),
         sa.Column("photos", sa.JSON(), nullable=True),
+        sa.Column("thumbnail", sa.String(), nullable=True),
         sa.Column("category", sa.String(100), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),

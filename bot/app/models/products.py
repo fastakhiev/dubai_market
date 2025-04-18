@@ -16,6 +16,7 @@ class Product(ormar.Model):
     seller_id: User = ormar.ForeignKey(User)
     status: str = ormar.String(max_length=50, nullable=False)
     photos: list = ormar.JSON(nullable=True)
+    thumbnail: str = ormar.String(nullable=True, max_length=1000)
     category: str = ormar.String(max_length=100, nullable=False)
     created_at: datetime = ormar.DateTime(nullable=False, default=datetime.now())
     updated_at: datetime = ormar.DateTime(nullable=False, default=datetime.now())

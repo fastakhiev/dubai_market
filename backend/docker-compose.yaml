@@ -1,0 +1,11 @@
+services:
+  postgresdb:
+    image: postgres:latest
+    container_name: back_db
+    env_file:
+      - .env
+    ports:
+      - "44434:5432"
+    volumes:
+      - ./dockerfiles/postgresql/data:/var/lib/postgresql/data
+    restart: on-failure

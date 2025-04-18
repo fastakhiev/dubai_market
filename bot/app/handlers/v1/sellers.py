@@ -211,11 +211,12 @@ async def create_product_upload_photos(
 ):
     if album:
         photos = [msg.photo[-1].file_id for msg in album]
+        photos.append(album[0].photo[0].file_id)
     else:
         if not message.photo:
             await message.answer("Пожалуйста, отправьте фото.")
             return
-        photos = [message.photo[-1].file_id]
+        photos = [message.photo[-1].file_id, message.photo[0].file_id]
 
     if len(photos) > 10:
         await message.answer("Вы можете загрузить не более 10 фото!")
@@ -233,6 +234,8 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
     await state.update_data(category=callback.data)
     data = await state.get_data()
     data["seller_id"] = UUID(data["seller_id"])
+    thumbnail = data["photos"].pop(-1)
+
     product = await Product.objects.create(
         title=data["title"],
         description=data["description"],
@@ -241,6 +244,7 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
         seller_id=data["seller_id"],
         status="active",
         photos=list(data["photos"]),
+        thumbnail=thumbnail,
         category=data["category"],
     )
     product_dict = product.model_dump()
@@ -248,5 +252,15 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
     product_dict["seller_id"] = str(product.seller_id)
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.edit_text(f"Вы выбрали {callback.data}")
-    await es.index(index="products", id=product_dict["id"], body=product_dict)
+    await es.index(index="products", id=product_dict["id"], body={
+        "id": str(product.id),
+        "title": product.title,
+        "description": product.description,
+        "price": product.price,
+        "currency": product.currency,
+        "seller_id": str(product.seller_id),
+        "status": product.status,
+        "thumbnail": product.thumbnail,
+        "category": product.category
+    })
     await callback.message.answer("Товар создан", reply_markup=seller_kb)

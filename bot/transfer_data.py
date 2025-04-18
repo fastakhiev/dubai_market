@@ -26,8 +26,8 @@ def create_index_if_not_exists(index_name):
                     "tokenizer": {
                         "edge_ngram_tokenizer": {
                             "type": "edge_ngram",
-                            "min_gram": 3,
-                            "max_gram": 10,
+                            "min_gram": 1,
+                            "max_gram": 20,
                             "token_chars": ["letter", "digit"],
                         }
                     },
@@ -37,24 +37,24 @@ def create_index_if_not_exists(index_name):
                             "tokenizer": "edge_ngram_tokenizer",
                             "filter": ["lowercase"],
                         },
-                        "whitespace_analyzer": {"type": "whitespace"},
+                        "whitespace_analyzer": {
+                            "type": "custom",
+                            "tokenizer": "whitespace",
+                            "filter": ["lowercase"],
+                        },
                     },
                 }
             },
             "mappings": {
                 "properties": {
-                    "iupac_name": {
+                    "title": {
                         "type": "text",
                         "analyzer": "edge_ngram_analyzer",
                         "search_analyzer": "whitespace_analyzer",
                         "fields": {
                             "keyword": {"type": "keyword"},
-                            "prefix": {
-                                "type": "text",
-                                "analyzer": "whitespace_analyzer",
-                            },
                         },
-                    }
+                    },
                 }
             },
         }
@@ -69,7 +69,7 @@ def fetch_pg_data(batch_size=BATCH_SIZE):
     offset = 0
     while True:
         query = f"""
-        SELECT id, title, description, price, currency, seller_id, status, photos, category
+        SELECT id, title, description, price, currency, seller_id, status, thumbnail, category
         FROM products
         LIMIT {batch_size} OFFSET {offset};
         """
