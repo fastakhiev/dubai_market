@@ -64,7 +64,7 @@ async def inline_search(inline_query: InlineQuery):
                 id=str(product["id"]),
                 title=f'{product["title"]}, {product["price"]} {product["currency"]}',
                 description=product["description"],
-                thumb_url="http://0.0.0.0:8000/get_image/AgACAgIAAxkBAAIIfmgB_vG9IE_4BI9aiEDzhrvwvO-fAALk8DEbdnQRSGZempbzn_mYAQADAgADeQADNgQ",  # тут можно оставить превью картинки
+                thumb_url="https://dubaimarketbot.ru/get_image/AgACAgIAAxkBAAIIiWgCH-_lXS7SB32Zzs40kZ99Xf6kAAKnBjIbgOIRSDaR771xrAABmQEAAwIAA3kAAzYE",  # тут можно оставить превью картинки
                 input_message_content=InputTextMessageContent(
                     message_text=f"{product['title']}\nЦена: {product['price']} {product['currency']}\nОписание: {product['description']}"
                 )

@@ -1,19 +1,18 @@
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
 from app.schemas.upload import UploadImage
 import asyncio
 from app.core.http_client import get_http_session
 from app.core import config
 import os
-import aiofiles
 from app.models.photos import Photo
+from app.core.minio_client import minio_client
 
 router = APIRouter()
 
 DOWNLOAD_SEMAPHORE = asyncio.Semaphore(10)
 
 
-@router.post("/upload_image")
+@router.post("/upload_preview")
 async def upload_image(
         upload_data: UploadImage
 ):
@@ -34,19 +33,20 @@ async def upload_image(
                 raise HTTPException(status_code=resp.status, detail="Failed to download file from Telegram")
             content = await resp.read()
 
-        os.makedirs("app/images/", exist_ok=True)
         filename = os.path.basename(file_path)
-        full_path = os.path.join("app/images/", filename)
-
-        async with aiofiles.open(full_path, "wb") as f:
-            await f.write(content)
+        minio_client.put_object(
+            config.MINIO_BUCKET_PREVIEW,
+            filename,
+            data=content,
+            length=len(content),
+        )
 
         await Photo.objects.create(
             file_id=upload_data.file_id,
-            file_path=full_path
+            file_path=filename
         )
 
-        return {"status": "ok", "filename": filename, "path": full_path}
+        return {"status": "ok", "filename": filename}
 
 
 @router.get("/get_image/{file_id}")
@@ -54,7 +54,9 @@ async def get_image_by_id(
         file_id: str
 ):
     file_info = await Photo.objects.get(file_id=file_id)
-    if os.path.exists(file_info.file_path):
-        return FileResponse(file_info.file_path)
-    else:
-        raise HTTPException(status_code=404)
+    url = minio_client.presigned_get_object(
+        config.MINIO_BUCKET_PREVIEW, file_info.file_path,
+    )
+    return {
+        "url": url
+    }
