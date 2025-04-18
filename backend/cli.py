@@ -19,7 +19,7 @@ def dummy_command():
 
 @app.command()
 def api(
-    manager: ProcessManager = ProcessManager.uvicorn,
+    manager: ProcessManager = ProcessManager.gunicorn,
     port: int = 8000,
     host: str = "0.0.0.0",
     workers: int = 1,
