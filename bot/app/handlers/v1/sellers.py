@@ -6,9 +6,9 @@ from uuid import UUID
 from app.models.shops import Shop
 from app.models.products import Product
 from app.models.users import User
-from app.keyboards.seller import currency
+from app.keyboards.seller import currency, my_products
 from app.core.bot import bot
-from app.states.states import CreateProduct, MyProducts
+from app.states.states import CreateProduct, SearchFilter
 from app.handlers.utils.get_user_products import get_user_products
 from app.middlewares.album_middleware import AlbumMiddleware
 from app.core.elastic import es
@@ -17,162 +17,85 @@ from app.keyboards.seller import (
     categories_list,
     currency_list,
     cancel_button,
-    generate_pagination_buttons,
     seller as seller_kb,
+    inline_back_button
 )
+
 
 router = Router()
 router.message.middleware(AlbumMiddleware())
 
 
-@router.message(F.text == "Мой магазин")
-async def get_my_shop(message: Message):
+@router.callback_query(F.data == "my_shop")
+async def get_my_shop(callback: CallbackQuery):
     shop = await Shop.objects.select_related("user_id").get(
-        user_id__telegram_id=str(message.from_user.id)
+        user_id__telegram_id=str(callback.from_user.id)
     )
-    await message.answer_photo(photo=shop.photo)
-    await message.answer(
-        f"Название: {shop.name}\nСоциальные сети: {shop.social_networks}\n "
+    await callback.message.edit_media(
+        media=InputMediaPhoto(
+            media=shop.photo,
+            caption=f"Название: {shop.name}\nСоциальные сети: {shop.social_networks}\n "
+        ),
+        reply_markup=inline_back_button
     )
-
-
-@router.message(F.text == "Мои товары")
-async def show_products(message: Message, state: FSMContext):
-    user_id = str(message.from_user.id)
-    page = 0
-
-    products, total_pages = await get_user_products(user_id, page)
-    if not products:
-        await message.answer("У вас нет товаров 😔")
-        return
-
-    markup = generate_pagination_buttons(page, total_pages, user_id)
-
-    await state.clear()
-    await state.set_state(MyProducts.pagination)
-
-    current_messages = []
-
-    await message.answer("Ваши товары:", reply_markup=ReplyKeyboardRemove())
-    for i in range(len(products)):
-        media = [InputMediaPhoto(media=photo) for photo in products[i].photos]
-        sent_photos = await message.answer_media_group(media)
-        if i == 0 and len(products) > 1:
-            sent_text = await message.answer(
-                f"Название: {products[i].title}\n"
-                f"Описание: {products[i].description}\n"
-                f"Цена: {products[i].price} {products[i].currency}",
-                reply_markup=ReplyKeyboardRemove(),
-            )
-        if i == len(products) - 1 and len(products) > 1:
-            sent_text = await message.answer(
-                f"Название: {products[i].title}\n"
-                f"Описание: {products[i].description}\n"
-                f"Цена: {products[i].price} {products[i].currency}",
-                reply_markup=cancel_button,
-            )
-        elif i != 0:
-            sent_text = await message.answer(
-                f"Название: {products[i].title}\n"
-                f"Описание: {products[i].description}\n"
-                f"Цена: {products[i].price} {products[i].currency}",
-            )
-        if len(products) == 1:
-            sent_text = await message.answer(
-                f"Название: {products[i].title}\n"
-                f"Описание: {products[i].description}\n"
-                f"Цена: {products[i].price} {products[i].currency}",
-                reply_markup=cancel_button,
-            )
-        current_messages.extend([msg.message_id for msg in sent_photos])
-        current_messages.append(sent_text.message_id)
-    page_message = await message.answer(
-        f"Страница {page + 1} / {total_pages}", reply_markup=markup
-    )
-    current_messages.append(page_message.message_id)
-
-    await state.update_data(
-        chat_id=message.chat.id, current_page=page, current_messages=current_messages
-    )
-
-
-@router.callback_query(lambda c: c.data.startswith(("prev_page", "next_page")))
-async def paginate_products(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
-    _, user_id, page = callback.data.split(":")
-    page = int(page)
 
-    data = await state.get_data()
 
-    for msg_id in data.get("current_messages", []):
-        try:
-            await bot.delete_message(chat_id=data["chat_id"], message_id=msg_id)
-        except Exception as e:
-            print(f"❌ Ошибка при удалении {msg_id}: {e}")
+@router.callback_query(F.data == "my_products")
+async def get_my_products(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await state.set_state(SearchFilter.filter)
+    await state.set_state(SearchFilter.message)
+    user = await User.objects.get(telegram_id=str(callback.from_user.id))
+    message = await callback.message.edit_text("Нажмите для вывода", reply_markup=my_products)
+    await state.update_data(filter={"seller_id": str(user.id)}, message={
+        "type": "seller",
+        "message_id": message.message_id
+    })
+    await callback.answer()
 
-    products, total_pages = await get_user_products(user_id, page)
-    if not products:
-        await callback.message.answer("Товары не найдены!")
-        return
 
-    markup = generate_pagination_buttons(page, total_pages, user_id)
+@router.callback_query(F.data == "back_from_product_seller")
+async def back_from_product_sel(callback: CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    for i in state_data["current_product"]["messages_ids"]:
+        await bot.delete_message(chat_id=state_data["current_product"]["chat_id"], message_id=i)
 
-    current_messages = []
+    message = await callback.message.answer("Нажмите для вывода", reply_markup=my_products)
+    await state.update_data(filter=state_data["filter"], message={
+        "type": "seller",
+        "message_id": message.message_id
+    })
+    await callback.answer()
 
-    for i in range(len(products)):
-        media = [InputMediaPhoto(media=photo) for photo in products[i].photos]
-        sent_photos = await callback.message.answer_media_group(media)
-        if i == 0 and len(products) > 1:
-            sent_text = await callback.message.answer(
-                f"Название: {products[i].title}\n"
-                f"Описание: {products[i].description}\n"
-                f"Цена: {products[i].price} {products[i].currency}",
-                reply_markup=ReplyKeyboardRemove(),
-            )
-        if i == len(products) - 1 and len(products) > 1:
-            sent_text = await callback.message.answer(
-                f"Название: {products[i].title}\n"
-                f"Описание: {products[i].description}\n"
-                f"Цена: {products[i].price} {products[i].currency}",
-                reply_markup=cancel_button,
-            )
-        elif i != 0:
-            sent_text = await callback.message.answer(
-                f"Название: {products[i].title}\n"
-                f"Описание: {products[i].description}\n"
-                f"Цена: {products[i].price} {products[i].currency}",
-            )
-        if len(products) == 1:
-            sent_text = await callback.message.answer(
-                f"Название: {products[i].title}\n"
-                f"Описание: {products[i].description}\n"
-                f"Цена: {products[i].price} {products[i].currency}",
-                reply_markup=cancel_button,
-            )
-        current_messages.extend([msg.message_id for msg in sent_photos])
-        current_messages.append(sent_text.message_id)
 
-    page_message = await callback.message.answer(
-        f"Страница {page + 1} / {total_pages}", reply_markup=markup
+@router.callback_query(F.data == "back")
+async def back_seller(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await callback.message.answer(
+        text="Выбирете действие",
+        reply_markup=seller_kb
     )
-    current_messages.append(page_message.message_id)
-
-    await state.update_data(current_page=page, current_messages=current_messages)
+    await state.clear()
+    await callback.answer()
 
 
 @router.message(F.text == "Назад")
 async def cancel_create_product(message: Message, state: FSMContext):
     await state.clear()
+    await message.answer("Вы отменили создание товара", reply_markup=ReplyKeyboardRemove())
     await message.answer("Выбрете действие", reply_markup=seller_kb)
 
 
-@router.message(F.text == "Создать товар")
-async def create_product(message: Message, state: FSMContext):
-    user = await User.objects.get(telegram_id=str(message.from_user.id))
+@router.callback_query(F.data == "create_product")
+async def create_product(callbck: CallbackQuery, state: FSMContext):
+    user = await User.objects.get(telegram_id=str(callbck.from_user.id))
     await state.set_state(CreateProduct.seller_id)
     await state.update_data(seller_id=str(user.id))
     await state.set_state(CreateProduct.title)
-    await message.answer("Введите название товара", reply_markup=cancel_button)
+    await callbck.message.delete()
+    await callbck.answer()
+    await callbck.message.answer("Введите название товара", reply_markup=cancel_button)
 
 
 @router.message(CreateProduct.title)
@@ -264,3 +187,15 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
         "category": product.category
     })
     await callback.message.answer("Товар создан", reply_markup=seller_kb)
+
+
+@router.callback_query(F.data == "orders_seller")
+async def get_orders_seller(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(SearchFilter.filter)
+    await state.set_state(SearchFilter.message)
+    message = await callback.message.answer("Нажмите для вывода", reply_markup=my_products)
+    await state.update_data(filter={"orders": str(callback.from_user.id)}, message={
+        "type": "seller",
+        "message_id": message.message_id
+    })
+    await callback.answer()

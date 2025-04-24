@@ -6,13 +6,36 @@ from aiogram.types import (
 )
 
 
-seller = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="Мой магазин"), KeyboardButton(text="Мои товары")],
-        [KeyboardButton(text="Вопросы"), KeyboardButton(text="Создать товар")],
-        [KeyboardButton(text="Заказы")],
-    ],
-    resize_keyboard=True,
+# seller = ReplyKeyboardMarkup(
+#     keyboard=[
+#         [KeyboardButton(text="Мой магазин"), KeyboardButton(text="Мои товары")],
+#         [KeyboardButton(text="Вопросы"), KeyboardButton(text="Создать товар")],
+#         [KeyboardButton(text="Заказы")],
+#     ],
+#     resize_keyboard=True,
+# )
+
+seller = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Мой магазин", callback_data="my_shop")],
+        [InlineKeyboardButton(text="Мои товары", callback_data="my_products")],
+        [InlineKeyboardButton(text="Вопросы", callback_data="questions")],
+        [InlineKeyboardButton(text="Создать товар", callback_data="create_product")],
+        [InlineKeyboardButton(text="Заказы", callback_data="orders_seller")]
+    ]
+)
+
+inline_back_button = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Назад", callback_data="back")]
+    ]
+)
+
+my_products = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Поиск", switch_inline_query_current_chat="")],
+        [InlineKeyboardButton(text="Назад", callback_data="back")]
+    ]
 )
 
 currency = InlineKeyboardMarkup(
@@ -28,6 +51,12 @@ cancel_button = ReplyKeyboardMarkup(
 )
 
 currency_list = ["RUB", "AED", "USD"]
+
+product_inline_buttons_seller = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Назад", callback_data="back_from_product_seller")]
+    ]
+)
 
 categories_general = InlineKeyboardMarkup(
     inline_keyboard=[
@@ -75,28 +104,3 @@ categories_list = [
     "Животные",
     "Услуги",
 ]
-
-
-def generate_pagination_buttons(page: int, total_pages: int, user_id: str):
-    buttons = []
-    if page + 1 - total_pages == 0 and page == 0:
-        return InlineKeyboardMarkup(inline_keyboard=buttons)
-
-    if page + 1 > 1:
-        buttons.append(
-            [
-                InlineKeyboardButton(
-                    text="Назад", callback_data=f"prev_page:{user_id}:{page - 1}"
-                )
-            ]
-        )
-
-    if page + 1 < total_pages:
-        buttons.append(
-            [
-                InlineKeyboardButton(
-                    text="Вперёд", callback_data=f"next_page:{user_id}:{page + 1}"
-                )
-            ]
-        )
-    return InlineKeyboardMarkup(inline_keyboard=buttons)

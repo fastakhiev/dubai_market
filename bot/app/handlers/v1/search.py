@@ -1,0 +1,112 @@
+from aiogram import Router, F
+from aiogram.fsm.context import FSMContext
+
+from app.core.elastic import es
+from app.models.orders import Order
+from aiogram.types import (
+    InlineQuery,
+    InlineQueryResultArticle,
+    InputTextMessageContent,
+    InlineQueryResultPhoto,
+    Message,
+)
+
+router = Router()
+
+
+@router.inline_query()
+async def inline_search(inline_query: InlineQuery, state: FSMContext):
+    query = inline_query.query.strip()
+    data = await state.get_data()
+
+    if "filter" not in data:
+        await inline_query.answer(
+            results=[],
+            switch_pm_text="Ошибка: фильтр не установлен",
+            switch_pm_parameter="set_filter",
+            cache_time=1
+        )
+        return
+
+    if "orders" in data["filter"]:
+        if data["message"]["type"] == "seller":
+            orders = await Order.objects.select_related('product_id__seller_id').filter(product_id__seller_id__telegram_id=data["filter"]["orders"]).all()
+            results = []
+            for i in orders:
+                results.append(
+                    InlineQueryResultArticle(
+                        id=str(i.id),
+                        title=i.product_id.title,
+                        description=i.product_id.description,
+                        input_message_content=InputTextMessageContent(
+                            message_text="12"
+                        )
+                    )
+                )
+            await inline_query.answer(results, cache_time=1)
+            return
+
+    filter_dict = data["filter"]
+    must_conditions = []
+
+    for key, value in filter_dict.items():
+        must_conditions.append({
+            "term": {key: value}
+        })
+
+    if query:
+        es_query = {
+            "query": {
+                "bool": {
+                    "must": must_conditions,
+                    "should": [
+                        {"term": {"title.keyword": {"value": query, "boost": 100}}},
+                        {"match": {"title": {"query": query, "boost": 50}}},
+                        {"match_phrase": {"title": {"query": query, "boost": 20}}},
+                        {
+                            "match": {
+                                "title": {
+                                    "query": query,
+                                    "operator": "and",
+                                    "fuzziness": "auto",
+                                    "boost": 10,
+                                }
+                            }
+                        },
+                    ],
+                    "minimum_should_match": 1
+                }
+            },
+            "sort": [{"_score": "desc"}, {"title.keyword": "asc"}]
+        }
+    else:
+        es_query = {
+            "query": {
+                "bool": {
+                    "must": must_conditions
+                }
+            },
+            "size": 10,
+            "sort": [{"title.keyword": "asc"}]
+        }
+
+
+    response = await es.search(index="products", body=es_query)
+
+
+    results = []
+    for hit in response["hits"]["hits"]:
+        product = hit["_source"]
+        results.append(
+            InlineQueryResultArticle(
+                id=str(product["id"]),
+                title=f'{product["title"]}, {product["price"]} {product["currency"]}',
+                description=product["description"],
+                thumb_url="https://dubaimarketbot.ru/get_image/AgACAgIAAxkBAAIIiWgCH-_lXS7SB32Zzs40kZ99Xf6kAAKnBjIbgOIRSDaR771xrAABmQEAAwIAA3kAAzYE",
+                input_message_content=InputTextMessageContent(
+                    message_text=f"product_{product['id']}:{data['message']['type']}"
+                ),
+            )
+        )
+
+    await inline_query.answer(results, cache_time=1)

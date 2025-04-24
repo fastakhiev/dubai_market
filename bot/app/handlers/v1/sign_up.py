@@ -11,6 +11,7 @@ from app.models.users import User
 from app.models.shops import Shop
 import ormar
 
+
 router = Router()
 
 

@@ -46,17 +46,29 @@ def create_index_if_not_exists(index_name):
                 }
             },
             "mappings": {
-                "properties": {
-                    "title": {
-                        "type": "text",
-                        "analyzer": "edge_ngram_analyzer",
-                        "search_analyzer": "whitespace_analyzer",
-                        "fields": {
-                            "keyword": {"type": "keyword"},
-                        },
-                    },
-                }
+    "properties": {
+        "title": {
+            "type": "text",
+            "analyzer": "edge_ngram_analyzer",
+            "search_analyzer": "whitespace_analyzer",
+            "fields": {
+                "keyword": {"type": "keyword"},
             },
+        },
+        "category": {
+            "type": "keyword"
+        },
+        "currency": {
+            "type": "keyword"
+        },
+        "status": {
+            "type": "keyword"
+        },
+        "seller_id": {
+            "type": "keyword"
+        }
+    }
+},
         }
 
         es.indices.create(index=index_name, body=index_settings)

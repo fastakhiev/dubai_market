@@ -9,6 +9,11 @@ class SignUp(StatesGroup):
     role = State()
 
 
+class SearchFilter(StatesGroup):
+    filter = State()
+    message = State()
+
+
 class CreateShop(StatesGroup):
     name = State()
     photo = State()
@@ -28,3 +33,12 @@ class CreateProduct(StatesGroup):
 
 class MyProducts(StatesGroup):
     pagination = State()
+
+
+class CurrentProduct(StatesGroup):
+    current_product = State()
+
+
+class CreateOrder(StatesGroup):
+    address = State()
+    comment = State()
