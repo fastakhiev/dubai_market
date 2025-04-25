@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from app.schemas.upload import UploadImage
 import asyncio
 from app.core.http_client import get_http_session
 from app.core import config
 import os
+import mimetypes
 from app.models.photos import Photo
 from app.core.minio_client import minio_client
 import io
@@ -55,9 +57,13 @@ async def get_image_by_id(
         file_id: str
 ):
     file_info = await Photo.objects.get(file_id=file_id)
-    url = minio_client.presigned_get_object(
-        config.MINIO_BUCKET_PREVIEW, file_info.file_name,
+    response = minio_client.get_object(
+        config.MINIO_BUCKET_PREVIEW,
+        file_info.file_name,
     )
-    return {
-        "url": url
-    }
+    mime_type, _ = mimetypes.guess_type(file_info.file_name)
+    mime_type = mime_type or "application/octet-stream"
+    return StreamingResponse(
+        content=response,  # это stream
+        media_type=mime_type  # или image/jpeg — зависит от файла!
+    )
