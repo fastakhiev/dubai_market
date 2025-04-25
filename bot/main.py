@@ -6,7 +6,7 @@ from app.core.bot import bot
 from aiogram.fsm.storage.redis import RedisStorage
 
 
-storage = RedisStorage.from_url("redis://localhost:6379")
+storage = RedisStorage.from_url("redis://redis:6379")
 dp = Dispatcher(storage=storage)
 
 

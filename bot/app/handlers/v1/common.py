@@ -33,7 +33,7 @@ async def get_question_by_id(message: Message, state: FSMContext):
         else:
             keyboard = inline_back_buyer_from_order
         send_text = await message.answer_photo(
-            photo="https://dubaimarketbot.ru/get_image/AgACAgIAAxkBAAIIiWgCH-_lXS7SB32Zzs40kZ99Xf6kAAKnBjIbgOIRSDaR771xrAABmQEAAwIAA3kAAzYE",
+            photo=f"https://dubaimarketbot.ru/get_image/{question.product_id.thumbnail}",
             caption=f"Название: {question.product_id.title}\n"
             f"Описание: {question.product_id.description}\n"
             f"Цена: {question.product_id.price} {question.product_id.currency}\n"
@@ -71,7 +71,7 @@ async def get_order_by_id(message: Message, state: FSMContext):
         else:
             keyboard = inline_back_buyer_from_order
         send_text = await message.answer_photo(
-            photo="https://dubaimarketbot.ru/get_image/AgACAgIAAxkBAAIIiWgCH-_lXS7SB32Zzs40kZ99Xf6kAAKnBjIbgOIRSDaR771xrAABmQEAAwIAA3kAAzYE",
+            photo=f"https://dubaimarketbot.ru/get_image/{order.product_id.thumbnail}",
             caption=f"Название: {order.product_id.title}\n"
             f"Описание: {order.product_id.description}\n"
             f"Цена: {order.product_id.price} {order.product_id.currency}\n"

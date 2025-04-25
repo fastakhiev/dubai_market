@@ -27,7 +27,7 @@ def upgrade() -> None:
         sa.Column(
             "product_id",
             postgresql.UUID(as_uuid=True),
-            sa.ForeignKey("products.id"),
+            sa.ForeignKey("products.id", ondelete="CASCADE"),
             nullable=False,
         ),
         sa.Column(

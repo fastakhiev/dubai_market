@@ -38,6 +38,7 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
                     InlineQueryResultArticle(
                         id=str(i.id),
                         title=i.product_id.title,
+                        thumb_url=f"https://dubaimarketbot.ru/get_image/{i.product_id.thumbnail}",
                         description=f"{i.destination}; {'Подтвержден' if i.is_approve else 'Не подтвержден'}",
                         input_message_content=InputTextMessageContent(
                             message_text=f"order_{str(i.id)}:{data['message']['type']}"
@@ -54,6 +55,7 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
                     InlineQueryResultArticle(
                         id=str(i.id),
                         title=i.product_id.title,
+                        thumb_url=f"https://dubaimarketbot.ru/get_image/{i.product_id.thumbnail}",
                         description=f"{i.destination}; {'Подтвержден' if i.is_approve else 'Не подтвержден'}",
                         input_message_content=InputTextMessageContent(
                             message_text=f"order_{str(i.id)}:{data['message']['type']}"
@@ -72,6 +74,7 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
                     InlineQueryResultArticle(
                         id=str(i.id),
                         title=i.question,
+                        thumb_url=f"https://dubaimarketbot.ru/get_image/{i.product_id.thumbnail}",
                         description=f"{i.answer if i.answer else 'Нет ответа'}",
                         input_message_content=InputTextMessageContent(
                             message_text=f"question_{str(i.id)}:{data['message']['type']}"
@@ -81,13 +84,14 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
             await inline_query.answer(results, cache_time=1)
             return
         elif data["message"]["type"] == "buyer":
-            questions = await Question.objects.select_related('buyer_id').filter(buyer_id__telegram_id=data["filter"]["questions"]).all()
+            questions = await Question.objects.select_related('buyer_id').select_related("product_id").filter(buyer_id__telegram_id=data["filter"]["questions"]).all()
             results = []
             for i in questions:
                 results.append(
                     InlineQueryResultArticle(
                         id=str(i.id),
                         title=i.question,
+                        thumb_url=f"https://dubaimarketbot.ru/get_image/{i.product_id.thumbnail}",
                         description=f"{i.answer if i.answer else 'Нет ответа'}",
                         input_message_content=InputTextMessageContent(
                             message_text=f"question_{str(i.id)}:{data['message']['type']}"
@@ -153,7 +157,7 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
                 id=str(product["id"]),
                 title=f'{product["title"]}, {product["price"]} {product["currency"]}',
                 description=product["description"],
-                thumb_url="https://dubaimarketbot.ru/get_image/AgACAgIAAxkBAAIIiWgCH-_lXS7SB32Zzs40kZ99Xf6kAAKnBjIbgOIRSDaR771xrAABmQEAAwIAA3kAAzYE",
+                thumb_url=f"https://dubaimarketbot.ru/get_image/{product['thumbnail']}",
                 input_message_content=InputTextMessageContent(
                     message_text=f"product_{product['id']}:{data['message']['type']}"
                 ),

@@ -1,14 +1,22 @@
 services:
   postgresdb:
     image: postgres:latest
-    container_name: bot_db
+    volumes:
+      - ./entrypoint.sh:/docker-entrypoint-initdb.d/entrypoint.sh
+      - ./volumes/db/data:/var/lib/postgresql/data
+      - ./volumes/db/log:/var/log/postgresql
+    container_name: postgresdb
     env_file:
       - .env
     ports:
-      - "44433:5432"
-    volumes:
-      - ./dockerfiles/postgresql/data:/var/lib/postgresql/data
-    restart: on-failure
+      - 44433:5432
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U meta_db_user -d db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: always
 
   redis:
     image: redis/redis-stack:latest
@@ -31,3 +39,19 @@ services:
       - "9300:9300"
     volumes:
       - ./dockerfiles/elasticsearch/data:/var/lib/elasticsearch/data
+
+  dubai_bot:
+    build:
+      context: .
+      dockerfile: dockerfile
+    volumes:
+      - ./backend:/usr/app
+    restart: always
+    expose:
+      - 8002
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+    command: sh -c "python3 main.py"

@@ -11,7 +11,7 @@ class Shop(ormar.Model):
     name: str = ormar.String(max_length=100, nullable=False)
     photo: str = ormar.String(max_length=100, nullable=False)
     social_networks: str = ormar.String(max_length=1000, nullable=True)
-    user_id: User = ormar.ForeignKey(User)
+    user_id: User = ormar.ForeignKey(User, ondelete="CASCADE")
     created_at: datetime.datetime = ormar.DateTime(
         nullable=False, default=datetime.datetime.now
     )

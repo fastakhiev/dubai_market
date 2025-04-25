@@ -13,7 +13,7 @@ class Product(ormar.Model):
     description: str = ormar.Text(nullable=True)
     price: Decimal = ormar.Decimal(precision=10, scale=2, nullable=False)
     currency: str = ormar.String(max_length=10, nullable=False)
-    seller_id: User = ormar.ForeignKey(User)
+    seller_id: User = ormar.ForeignKey(User, ondelete="CASCADE")
     status: str = ormar.String(max_length=50, nullable=False)
     photos: list = ormar.JSON(nullable=True)
     thumbnail: str = ormar.String(nullable=True, max_length=1000)

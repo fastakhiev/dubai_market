@@ -14,6 +14,7 @@ class Settings:
     POSTGRES_DB: str = os.getenv("POSTGRES_DB")
     ELASTIC_HOST: str = os.getenv("ELASTIC_HOST")
     ELASTIC_PORT: int = os.getenv("ELASTIC_PORT")
+    FILES_BUCKET_URL: str = os.getenv("FILES_BUCKET_URL")
 
 
 @lru_cache()

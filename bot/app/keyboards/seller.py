@@ -45,6 +45,7 @@ currency_list = ["RUB", "AED", "USD"]
 
 product_inline_buttons_seller = InlineKeyboardMarkup(
     inline_keyboard=[
+        [InlineKeyboardButton(text="Удалить", callback_data="delete_product")],
         [InlineKeyboardButton(text="Назад", callback_data="back_from_product_seller")]
     ]
 )

@@ -5,6 +5,7 @@ from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery, InputMedi
 from aiogram.fsm.context import FSMContext
 from uuid import UUID
 
+from app.clients.internal_api.file_bucket import FileBucketApi
 from app.handlers.v1.common import delete_notification
 from app.keyboards.common import notification_button
 from app.models.shops import Shop
@@ -57,6 +58,18 @@ async def get_my_products(callback: CallbackQuery, state: FSMContext):
         "type": "seller",
         "message_id": message.message_id
     })
+    await callback.answer()
+
+
+@router.callback_query(F.data == "delete_product")
+async def delete_product(callback: CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    await Product.objects.delete(id=UUID(state_data["current_product"]["product_id"]))
+    await es.delete(index="products", id=state_data["current_product"]["product_id"])
+    await callback.message.delete()
+    await callback.message.answer("Вы удалили товар")
+    await state.clear()
+    await callback.message.answer("Выбрете действие", reply_markup=seller_kb)
     await callback.answer()
 
 
@@ -139,12 +152,12 @@ async def create_product_upload_photos(
 ):
     if album:
         photos = [msg.photo[-1].file_id for msg in album]
-        photos.append(album[0].photo[0].file_id)
+        photos.append(album[0].photo[-1].file_id)
     else:
         if not message.photo:
             await message.answer("Пожалуйста, отправьте фото.")
             return
-        photos = [message.photo[-1].file_id, message.photo[0].file_id]
+        photos = [message.photo[-1].file_id, message.photo[-1].file_id]
 
     if len(photos) > 10:
         await message.answer("Вы можете загрузить не более 10 фото!")
@@ -163,7 +176,7 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
     data = await state.get_data()
     data["seller_id"] = UUID(data["seller_id"])
     thumbnail = data["photos"].pop(-1)
-
+    await FileBucketApi.upload_image(thumbnail)
     product = await Product.objects.create(
         title=data["title"],
         description=data["description"],
