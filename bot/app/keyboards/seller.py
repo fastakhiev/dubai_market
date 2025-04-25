@@ -6,20 +6,11 @@ from aiogram.types import (
 )
 
 
-# seller = ReplyKeyboardMarkup(
-#     keyboard=[
-#         [KeyboardButton(text="Мой магазин"), KeyboardButton(text="Мои товары")],
-#         [KeyboardButton(text="Вопросы"), KeyboardButton(text="Создать товар")],
-#         [KeyboardButton(text="Заказы")],
-#     ],
-#     resize_keyboard=True,
-# )
-
 seller = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Мой магазин", callback_data="my_shop")],
         [InlineKeyboardButton(text="Мои товары", callback_data="my_products")],
-        [InlineKeyboardButton(text="Вопросы", callback_data="questions")],
+        [InlineKeyboardButton(text="Вопросы", callback_data="questions_seller")],
         [InlineKeyboardButton(text="Создать товар", callback_data="create_product")],
         [InlineKeyboardButton(text="Заказы", callback_data="orders_seller")]
     ]
@@ -55,6 +46,21 @@ currency_list = ["RUB", "AED", "USD"]
 product_inline_buttons_seller = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Назад", callback_data="back_from_product_seller")]
+    ]
+)
+
+order_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Подтвердить", callback_data="approve_order")],
+        [InlineKeyboardButton(text="Отменить", callback_data="cancel_order_seller")],
+        [InlineKeyboardButton(text="Назад", callback_data="back")]
+    ]
+)
+
+question_button = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Ответить", callback_data="answer_question")],
+        [InlineKeyboardButton(text="Назад", callback_data="back")]
     ]
 )
 

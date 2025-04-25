@@ -42,3 +42,23 @@ class CurrentProduct(StatesGroup):
 class CreateOrder(StatesGroup):
     address = State()
     comment = State()
+
+
+class CurrentOrder(StatesGroup):
+    current_order = State()
+
+
+class CurrentQuestion(StatesGroup):
+    current_question = State()
+
+
+class ApproveOrder(StatesGroup):
+    seller_comment = State()
+
+
+class CreateQuestion(StatesGroup):
+    question = State()
+
+
+class AnswerQuestion(StatesGroup):
+    answer = State()

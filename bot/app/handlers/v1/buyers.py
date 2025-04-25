@@ -3,12 +3,13 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from uuid import UUID
 
-from app.keyboards.buyer import search_filters, search_buttons, categories_list_b, back_from_create_order, buyer as kb_buyer
-from app.states.states import SearchFilter, CreateOrder
+from app.keyboards.buyer import search_filters, search_buttons, categories_list_b, reply_back_buyer, buyer as kb_buyer, orders_list_buttons
+from app.states.states import SearchFilter, CreateOrder, CreateQuestion
 from app.keyboards.common import notification_button
 from app.models.orders import Order
 from app.models.users import User
 from app.models.products import Product
+from app.models.questions import Question
 from app.core.bot import bot
 
 
@@ -71,15 +72,15 @@ async def buy_product_one(callback: CallbackQuery, state: FSMContext):
     for i in state_data["current_product"]["messages_ids"]:
         await bot.delete_message(chat_id=state_data["current_product"]["chat_id"], message_id=i)
 
-    await callback.message.answer("Введите адрес доставки", reply_markup=back_from_create_order)
+    await callback.message.answer("Введите адрес доставки", reply_markup=reply_back_buyer)
     await state.set_state(CreateOrder.address)
     await callback.answer()
 
 
-@router.message(F.text == "Отменить заказ")
+@router.message(F.text == "Отменить")
 async def back_from_buy_product(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer("Вы отменили заказ", reply_markup=ReplyKeyboardRemove())
+    await message.answer("Вы отменили действие", reply_markup=ReplyKeyboardRemove())
     await message.answer("Выберете действие", reply_markup=kb_buyer)
 
 
@@ -110,6 +111,71 @@ async def create_order_enter_comment(message: Message, state: FSMContext):
     await message.answer("Выберете действие", reply_markup=kb_buyer)
 
 
+@router.callback_query(F.data == "back_buyer")
+async def back_from_filter_buyer(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.edit_text("Выбирете действие", reply_markup=kb_buyer)
+    await callback.answer()
 
 
+@router.callback_query(F.data == "orders_buyer")
+async def get_orders_buyer(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(SearchFilter.filter)
+    await state.set_state(SearchFilter.message)
+    message = await callback.message.edit_text("Нажмите для вывода", reply_markup=orders_list_buttons)
+    await state.update_data(filter={"orders": str(callback.from_user.id)}, message={
+        "type": "buyer",
+        "message_id": message.message_id
+    })
+    await callback.answer()
+
+
+@router.callback_query(F.data == "questions_buyer")
+async def get_questions_buyer(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(SearchFilter.filter)
+    await state.set_state(SearchFilter.message)
+    message = await callback.message.edit_text("Нажмите для вывода", reply_markup=orders_list_buttons)
+    await state.update_data(filter={"questions": str(callback.from_user.id)}, message={
+        "type": "buyer",
+        "message_id": message.message_id
+    })
+    await callback.answer()
+
+
+
+
+@router.callback_query(F.data == "back_from_order_buyer")
+async def back_from_order_buyer(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.delete()
+    await callback.message.answer("Выбирете действие", reply_markup=kb_buyer)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "ask_product")
+async def ask_about_product(callback: CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    for i in state_data["current_product"]["messages_ids"]:
+        await bot.delete_message(chat_id=state_data["current_product"]["chat_id"], message_id=i)
+
+    await callback.message.answer("Введите ваш вопрос", reply_markup=reply_back_buyer)
+    await state.set_state(CreateQuestion.question)
+    await callback.answer()
+
+@router.message(CreateQuestion.question)
+async def enter_question(message: Message, state: FSMContext):
+    await state.update_data(question=message.text)
+    state_data = await state.get_data()
+    me = await User.objects.get(telegram_id=str(message.from_user.id))
+    product = await Product.objects.select_related("seller_id").get(id=UUID(state_data["current_product"]["product_id"]))
+    await Question.objects.create(
+        buyer_id=me.id,
+        product_id=product.id,
+        question=state_data["question"],
+        answer=None
+    )
+    await bot.send_message(chat_id=product.seller_id.telegram_id, text="Вам задали вопрос", reply_markup=notification_button)
+    await message.answer("Вопрос отправлен", reply_markup=ReplyKeyboardRemove())
+    await state.clear()
+    await message.answer("Выберете действие", reply_markup=kb_buyer)
 

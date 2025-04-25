@@ -3,6 +3,7 @@ from aiogram.fsm.context import FSMContext
 
 from app.core.elastic import es
 from app.models.orders import Order
+from app.models.questions import Question
 from aiogram.types import (
     InlineQuery,
     InlineQueryResultArticle,
@@ -37,9 +38,59 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
                     InlineQueryResultArticle(
                         id=str(i.id),
                         title=i.product_id.title,
-                        description=i.product_id.description,
+                        description=f"{i.destination}; {'Подтвержден' if i.is_approve else 'Не подтвержден'}",
                         input_message_content=InputTextMessageContent(
-                            message_text="12"
+                            message_text=f"order_{str(i.id)}:{data['message']['type']}"
+                        )
+                    )
+                )
+            await inline_query.answer(results, cache_time=1)
+            return
+        elif data["message"]["type"] == "buyer":
+            orders = await Order.objects.select_related("product_id").select_related("buyer_id").filter(buyer_id__telegram_id=data["filter"]["orders"]).all()
+            results = []
+            for i in orders:
+                results.append(
+                    InlineQueryResultArticle(
+                        id=str(i.id),
+                        title=i.product_id.title,
+                        description=f"{i.destination}; {'Подтвержден' if i.is_approve else 'Не подтвержден'}",
+                        input_message_content=InputTextMessageContent(
+                            message_text=f"order_{str(i.id)}:{data['message']['type']}"
+                        )
+                    )
+                )
+            await inline_query.answer(results, cache_time=1)
+            return
+
+    if "questions" in data["filter"]:
+        if data["message"]["type"] == "seller":
+            questions = await Question.objects.select_related('product_id__seller_id').filter(product_id__seller_id__telegram_id=data["filter"]["questions"]).all()
+            results = []
+            for i in questions:
+                results.append(
+                    InlineQueryResultArticle(
+                        id=str(i.id),
+                        title=i.question,
+                        description=f"{i.answer if i.answer else 'Нет ответа'}",
+                        input_message_content=InputTextMessageContent(
+                            message_text=f"question_{str(i.id)}:{data['message']['type']}"
+                        )
+                    )
+                )
+            await inline_query.answer(results, cache_time=1)
+            return
+        elif data["message"]["type"] == "buyer":
+            questions = await Question.objects.select_related('buyer_id').filter(buyer_id__telegram_id=data["filter"]["questions"]).all()
+            results = []
+            for i in questions:
+                results.append(
+                    InlineQueryResultArticle(
+                        id=str(i.id),
+                        title=i.question,
+                        description=f"{i.answer if i.answer else 'Нет ответа'}",
+                        input_message_content=InputTextMessageContent(
+                            message_text=f"question_{str(i.id)}:{data['message']['type']}"
                         )
                     )
                 )

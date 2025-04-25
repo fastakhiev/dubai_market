@@ -4,13 +4,91 @@ from aiogram.fsm.context import FSMContext
 from uuid import UUID
 
 from app.models.products import Product
-from app.states.states import CurrentProduct
-from app.keyboards.buyer import product_buttons
-from app.keyboards.seller import product_inline_buttons_seller
+from app.models.orders import Order
+from app.models.questions import Question
+from app.states.states import CurrentProduct, CurrentOrder, CurrentQuestion
+from app.keyboards.buyer import product_buttons, inline_back_buyer_from_order
+from app.keyboards.seller import product_inline_buttons_seller, inline_back_button, order_buttons, question_button
 from app.core.bot import bot
 
 router = Router()
 
+
+@router.message(F.text.startswith("question_"))
+async def get_question_by_id(message: Message, state: FSMContext):
+    try:
+        await state.set_state(CurrentQuestion.current_question)
+        messages_ids = []
+        data = await state.get_data()
+        question, user_type = message.text.split(":")
+        question_id = question.split("question_")[1]
+        question = await Question.objects.select_related("product_id").get(id=UUID(question_id))
+        await message.delete()
+        await bot.delete_message(chat_id=message.chat.id, message_id=data["message"]["message_id"])
+        if user_type == "seller":
+            if question.answer:
+                keyboard = inline_back_button
+            else:
+                keyboard = question_button
+        else:
+            keyboard = inline_back_buyer_from_order
+        send_text = await message.answer_photo(
+            photo="https://dubaimarketbot.ru/get_image/AgACAgIAAxkBAAIIiWgCH-_lXS7SB32Zzs40kZ99Xf6kAAKnBjIbgOIRSDaR771xrAABmQEAAwIAA3kAAzYE",
+            caption=f"Название: {question.product_id.title}\n"
+            f"Описание: {question.product_id.description}\n"
+            f"Цена: {question.product_id.price} {question.product_id.currency}\n"
+            f"Вопрос: {question.question}\n"
+            f"Ответ: {question.answer if question.answer else 'Нет ответа'}\n",
+            reply_markup=keyboard
+        )
+        messages_ids.append(send_text.message_id)
+        await state.update_data(current_question={
+            "messages_ids": messages_ids,
+            "chat_id": message.chat.id,
+            "question_id": question_id
+        })
+    except Exception as e:
+        print(e)
+
+
+
+@router.message(F.text.startswith("order_"))
+async def get_order_by_id(message: Message, state: FSMContext):
+    try:
+        await state.set_state(CurrentOrder.current_order)
+        messages_ids = []
+        data = await state.get_data()
+        order, user_type = message.text.split(":")
+        order_id = order.split("order_")[1]
+        order = await Order.objects.select_related("product_id").get(id=UUID(order_id))
+        await message.delete()
+        await bot.delete_message(chat_id=message.chat.id, message_id=data["message"]["message_id"])
+        if user_type == "seller":
+            if order.is_approve:
+                keyboard = inline_back_button
+            else:
+                keyboard = order_buttons
+        else:
+            keyboard = inline_back_buyer_from_order
+        send_text = await message.answer_photo(
+            photo="https://dubaimarketbot.ru/get_image/AgACAgIAAxkBAAIIiWgCH-_lXS7SB32Zzs40kZ99Xf6kAAKnBjIbgOIRSDaR771xrAABmQEAAwIAA3kAAzYE",
+            caption=f"Название: {order.product_id.title}\n"
+            f"Описание: {order.product_id.description}\n"
+            f"Цена: {order.product_id.price} {order.product_id.currency}\n"
+            f"Адрес: {order.destination}\n"
+            f"Комментарий: {order.buyer_comment}\n"
+            f"Ответ продавца: {order.seller_comment if order.seller_comment else '-'}\n"
+            f"Статус: {'Подтвержден' if order.is_approve else 'Ожидает подтверждения'}",
+            reply_markup=keyboard
+        )
+        messages_ids.append(send_text.message_id)
+        await state.update_data(current_order={
+            "messages_ids": messages_ids,
+            "chat_id": message.chat.id,
+            "order_id": order_id
+        })
+    except Exception as e:
+        print(e)
 
 @router.message(F.text.startswith("product_"))
 async def get_product_by_id(message: Message, state: FSMContext):

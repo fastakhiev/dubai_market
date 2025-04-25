@@ -7,15 +7,12 @@ from aiogram.types import (
 
 buyer = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text="Перейти к поиску", callback_data="search_buyer")]
+        [InlineKeyboardButton(text="Перейти к поиску", callback_data="search_buyer")],
+        [InlineKeyboardButton(text="Заказы", callback_data="orders_buyer")],
+        [InlineKeyboardButton(text="Вопросы", callback_data="questions_buyer")]
     ]
 )
 
-# back_inline_button = InlineKeyboardMarkup(
-#     inline_keyboard=[
-#         [InlineKeyboardButton(text="Назад", callback_data="back_from_search")]
-#     ]
-# )
 
 search_buttons = InlineKeyboardMarkup(
     inline_keyboard=[
@@ -24,9 +21,22 @@ search_buttons = InlineKeyboardMarkup(
     ]
 )
 
-back_from_create_order = ReplyKeyboardMarkup(
+orders_list_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Перейти", switch_inline_query_current_chat="")],
+        [InlineKeyboardButton(text="Назад", callback_data="back_buyer")]
+    ]
+)
+
+inline_back_buyer_from_order = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Назад", callback_data="back_from_order_buyer")]
+    ]
+)
+
+reply_back_buyer = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="Отменить заказ")]
+        [KeyboardButton(text="Отменить")]
     ],
     resize_keyboard=True
 )
@@ -70,6 +80,7 @@ search_filters = InlineKeyboardMarkup(
         ],
         [InlineKeyboardButton(text="Животные", callback_data="Животные_b")],
         [InlineKeyboardButton(text="Услуги", callback_data="Услуги_b")],
+        [InlineKeyboardButton(text="Назад", callback_data="back_buyer")]
     ]
 )
 

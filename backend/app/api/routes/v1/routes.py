@@ -6,6 +6,7 @@ from app.core import config
 import os
 from app.models.photos import Photo
 from app.core.minio_client import minio_client
+import io
 
 router = APIRouter()
 
@@ -37,7 +38,7 @@ async def upload_image(
         minio_client.put_object(
             config.MINIO_BUCKET_PREVIEW,
             filename,
-            data=content,
+            data=io.BytesIO(content),
             length=len(content),
         )
 
