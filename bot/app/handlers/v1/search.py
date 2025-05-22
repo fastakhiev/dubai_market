@@ -28,7 +28,6 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
             switch_pm_parameter="set_filter",
             cache_time=1
         )
-        await cmd_start()
         return
 
     if "orders" in data["filter"]:

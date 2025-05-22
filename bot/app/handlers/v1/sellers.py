@@ -7,7 +7,6 @@ from uuid import UUID
 
 from app.clients.internal_api.file_bucket import FileBucketApi
 from app.handlers.v1.common import delete_notification
-from app.handlers.v1.sign_up import cmd_start
 from app.keyboards.common import notification_button
 from app.models.shops import Shop
 from app.models.products import Product
@@ -77,36 +76,26 @@ async def delete_product(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "back_from_product_seller")
 async def back_from_product_sel(callback: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
-    try:
-        for i in state_data["current_product"]["messages_ids"]:
-            await bot.delete_message(chat_id=state_data["current_product"]["chat_id"], message_id=i)
+    for i in state_data["current_product"]["messages_ids"]:
+        await bot.delete_message(chat_id=state_data["current_product"]["chat_id"], message_id=i)
 
-        message = await callback.message.answer("Нажмите для вывода", reply_markup=my_products)
-        await state.update_data(filter=state_data["filter"], message={
-            "type": "seller",
-            "message_id": message.message_id
-        })
-        await callback.answer()
-    except Exception as e:
-        print(e)
-        await callback.answer()
-        await cmd_start()
+    message = await callback.message.answer("Нажмите для вывода", reply_markup=my_products)
+    await state.update_data(filter=state_data["filter"], message={
+        "type": "seller",
+        "message_id": message.message_id
+    })
+    await callback.answer()
 
 
 @router.callback_query(F.data == "back")
 async def back_seller(callback: CallbackQuery, state: FSMContext):
-    try:
-        await callback.message.delete()
-        await callback.message.answer(
+    await callback.message.delete()
+    await callback.message.answer(
             text="Выбирете действие",
             reply_markup=seller_kb
         )
-        await state.clear()
-        await callback.answer()
-    except Exception as e:
-        print(e)
-        await callback.answer()
-        await cmd_start()
+    await state.clear()
+    await callback.answer()
 
 
 @router.message(F.text == "Назад")
@@ -238,20 +227,14 @@ async def get_orders_seller(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "questions_seller")
 async def get_orders_seller(callback: CallbackQuery, state: FSMContext):
-    try:
-        await state.set_state(SearchFilter.filter)
-        await state.set_state(SearchFilter.message)
-        message = await callback.message.edit_text("Нажмите для вывода", reply_markup=my_products)
-        await state.update_data(filter={"questions": str(callback.from_user.id)}, message={
+    await state.set_state(SearchFilter.filter)
+    await state.set_state(SearchFilter.message)
+    message = await callback.message.edit_text("Нажмите для вывода", reply_markup=my_products)
+    await state.update_data(filter={"questions": str(callback.from_user.id)}, message={
             "type": "seller",
             "message_id": message.message_id
         })
-        await callback.answer()
-    except Exception as e:
-        print(e)
-        await state.clear()
-        await callback.answer()
-        await cmd_start()
+    await callback.answer()
 
 
 @router.callback_query(F.data == "approve_order")
