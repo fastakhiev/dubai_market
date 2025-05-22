@@ -3,7 +3,7 @@ from aiogram import Dispatcher
 from app.handlers import router
 from app.core.db import database
 from app.core.bot import bot
-from app.handlers.v1.errors import global_error_handler
+from app.handlers.v1.errors import router as error_router
 from aiogram.fsm.storage.redis import RedisStorage
 
 
@@ -13,7 +13,7 @@ dp = Dispatcher(storage=storage)
 
 async def main():
     dp.include_router(router)
-    dp.errors.register(global_error_handler)
+    dp.errors.register(error_router)
     await database.connect()
     await dp.start_polling(bot)
 
