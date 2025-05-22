@@ -1,12 +1,9 @@
-from aiogram import Router
 from aiogram.types import Update, Message
 from aiogram.exceptions import TelegramBadRequest
 from app.handlers.v1.sign_up import cmd_start
 from app.core.bot import bot
 
-router = Router()
 
-@router.error()
 async def global_error_handler(event: Update, exception: Exception) -> bool:
     if isinstance(exception, TelegramBadRequest):
         error_text = str(exception)
