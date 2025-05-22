@@ -4,6 +4,7 @@ from aiogram.fsm.context import FSMContext
 from app.core.elastic import es
 from app.models.orders import Order
 from app.models.questions import Question
+from app.handlers.v1.sign_up import cmd_start
 from aiogram.types import (
     InlineQuery,
     InlineQueryResultArticle,
@@ -27,6 +28,7 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
             switch_pm_parameter="set_filter",
             cache_time=1
         )
+        await cmd_start()
         return
 
     if "orders" in data["filter"]:
