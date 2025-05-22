@@ -13,7 +13,7 @@ dp = Dispatcher(storage=storage)
 
 async def main():
     dp.include_router(router)
-    dp.errors.register(error_router)
+    dp.include_router(error_router)
     await database.connect()
     await dp.start_polling(bot)
 
