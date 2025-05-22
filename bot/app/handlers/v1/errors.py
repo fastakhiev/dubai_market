@@ -11,7 +11,7 @@ async def global_error_handler(event: Update, exception: Exception) -> bool:
     if isinstance(exception, TelegramBadRequest):
         error_text = str(exception)
 
-        if "message can't be edited" in error_text or "message to edit not found" in error_text:
+        if "message can't be edited" in error_text or "message to edit not found" in error_text or "message can't be deleted for everyone" in error_text:
             if event.callback_query:
                 user = event.callback_query.from_user
                 chat = event.callback_query.message.chat
