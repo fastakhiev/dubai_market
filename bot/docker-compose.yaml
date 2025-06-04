@@ -40,7 +40,8 @@ services:
       - "9200:9200"
       - "9300:9300"
     volumes:
-      - ./dockerfiles/elasticsearch/data:/var/lib/elasticsearch/data
+      - ./dockerfiles/elasticsearch/data:/usr/share/elasticsearch/data
+
 
   dubai_bot:
     build:

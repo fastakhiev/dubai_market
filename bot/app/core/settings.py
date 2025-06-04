@@ -15,6 +15,8 @@ class Settings:
     ELASTIC_HOST: str = os.getenv("ELASTIC_HOST")
     ELASTIC_PORT: int = os.getenv("ELASTIC_PORT")
     FILES_BUCKET_URL: str = os.getenv("FILES_BUCKET_URL")
+    REDIS_HOST: str = os.getenv("REDIS_HOST")
+    REDIS_PORT: int = os.getenv("REDIS_PORT")
 
 
 @lru_cache()
