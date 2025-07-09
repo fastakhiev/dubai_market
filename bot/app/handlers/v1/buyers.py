@@ -142,8 +142,6 @@ async def get_questions_buyer(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-
-
 @router.callback_query(F.data == "back_from_order_buyer")
 async def back_from_order_buyer(callback: CallbackQuery, state: FSMContext):
     await state.clear()

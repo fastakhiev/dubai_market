@@ -35,6 +35,7 @@ def upgrade() -> None:
             unique=True,
         ),
         sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("is_active", sa.Boolean(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
 

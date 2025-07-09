@@ -109,6 +109,10 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
         must_conditions.append({
             "term": {key: value}
         })
+    if data["message"]["type"] == "buyer":
+        must_conditions.append({
+            "term": {"is_active": "true"}
+        })
 
     if query:
         es_query = {
@@ -157,7 +161,7 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
             InlineQueryResultArticle(
                 id=str(product["id"]),
                 title=f'{product["title"]}, {product["price"]} {product["currency"]}',
-                description=product["description"],
+                description=f"{product['description']}, Статус: {'активен' if product['is_active'] else 'забанен' if data['message']['type'] == 'seller' else ''}",
                 thumb_url=f"https://dubaimarketbot.ru/get_image/{product['thumbnail']}",
                 input_message_content=InputTextMessageContent(
                     message_text=f"product_{product['id']}:{data['message']['type']}"

@@ -6,7 +6,6 @@ from aiogram.fsm.context import FSMContext
 from uuid import UUID
 
 from app.clients.internal_api.file_bucket import FileBucketApi
-from app.handlers.v1.common import delete_notification
 from app.keyboards.common import notification_button
 from app.models.shops import Shop
 from app.models.products import Product
@@ -176,17 +175,18 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
     data = await state.get_data()
     data["seller_id"] = UUID(data["seller_id"])
     thumbnail = data["photos"].pop(-1)
-    await FileBucketApi.upload_image(thumbnail)
+    for i in data["photos"]:
+        await FileBucketApi.upload_image(i)
     product = await Product.objects.create(
         title=data["title"],
         description=data["description"],
         price=data["price"],
         currency=data["currency"],
         seller_id=data["seller_id"],
-        status="active",
         photos=list(data["photos"]),
         thumbnail=thumbnail,
         category=data["category"],
+        is_active=True
     )
     product_dict = product.model_dump()
     product_dict["id"] = str(product_dict["id"])
@@ -201,9 +201,9 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
             "price": product.price,
             "currency": product.currency,
             "seller_id": str(product.seller_id.id),
-            "status": product.status,
             "thumbnail": product.thumbnail,
-            "category": product.category
+            "category": product.category,
+            "is_active": True
         })
         print(res)
         print("Indexed successfully")
