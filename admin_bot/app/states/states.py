@@ -11,5 +11,9 @@ class CurrentShop(StatesGroup):
     current_shop = State()
 
 
+class CurrentProduct(StatesGroup):
+    current_product = State()
+
+
 class CurrentOwner(StatesGroup):
     current_owner = State()

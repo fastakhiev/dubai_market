@@ -90,6 +90,7 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
                 )
             )
     else:
+        print(response)
         for hit in response["hits"]["hits"]:
             product = hit["_source"]
             results.append(

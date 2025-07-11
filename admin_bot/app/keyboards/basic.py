@@ -11,7 +11,7 @@ basic = InlineKeyboardMarkup(
 search_buttons = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Перейти к поиску", switch_inline_query_current_chat="")],
-        [InlineKeyboardButton(text="Назад", callback_data="back_from_search")]
+        [InlineKeyboardButton(text="На главную", callback_data="back_from_search")]
     ]
 )
 
@@ -20,14 +20,22 @@ shop_buttons = InlineKeyboardMarkup(
         [InlineKeyboardButton(text="Владелец", callback_data="shop_owner_from_shop")],
         [InlineKeyboardButton(text="Товары", callback_data="products_from_shop")],
         [InlineKeyboardButton(text="Забанить", callback_data="block_from_shop")],
-        [InlineKeyboardButton(text="Назад", callback_data="back_from_shop")]
+        [InlineKeyboardButton(text="На главную", callback_data="back_from_shop")]
+    ]
+)
+
+product_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Магазин", callback_data="shop_from_product")],
+        [InlineKeyboardButton(text="Забанить", callback_data="block_from_product")],
+        [InlineKeyboardButton(text="На главную", callback_data="back_from_product")]
     ]
 )
 
 seller_buttons = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Забанить", callback_data="block_from_seller")],
-        [InlineKeyboardButton(text="Назад", callback_data="back_from_seller")]
+        [InlineKeyboardButton(text="На главную", callback_data="back_from_seller")]
     ]
 )
 
@@ -62,7 +70,7 @@ search_filters = InlineKeyboardMarkup(
         ],
         [InlineKeyboardButton(text="Животные", callback_data="Животные_b")],
         [InlineKeyboardButton(text="Услуги", callback_data="Услуги_b")],
-        [InlineKeyboardButton(text="Назад", callback_data="back_from_search_products")]
+        [InlineKeyboardButton(text="На главную", callback_data="back_from_search_products")]
     ]
 )
 
@@ -79,3 +87,10 @@ categories_list_b = [
     "Животные_b",
     "Услуги_b",
 ]
+
+approve_block_shop_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Да", callback_data="approve_block_shop")],
+        [InlineKeyboardButton(text="Нет", callback_data="not_approve_block_shop")]
+    ]
+)

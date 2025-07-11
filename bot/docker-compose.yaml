@@ -43,18 +43,18 @@ services:
       - ./dockerfiles/elasticsearch/data:/usr/share/elasticsearch/data
 
 
-#  dubai_bot:
-#    build:
-#      context: .
-#      dockerfile: dockerfile
-#    volumes:
-#      - ./backend:/usr/app
-#    restart: always
-#    expose:
-#      - 8002
-#    ports:
-#      - "8002:8002"
-#    depends_on:
-#      postgresdb:
-#        condition: service_healthy
-#    command: sh -c "python3 main.py"
+  dubai_bot:
+    build:
+      context: .
+      dockerfile: dockerfile
+    volumes:
+      - ./backend:/usr/app
+    restart: always
+    expose:
+      - 8002
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+    command: sh -c "python3 main.py"
