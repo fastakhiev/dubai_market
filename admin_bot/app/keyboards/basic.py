@@ -4,6 +4,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 basic = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Магазины", callback_data="shops")],
+        [InlineKeyboardButton(text="Статистика", callback_data="statistics")],
         [InlineKeyboardButton(text="Товары", callback_data="products")]
     ]
 )
@@ -24,6 +25,14 @@ shop_buttons = InlineKeyboardMarkup(
     ]
 )
 
+blocked_shop_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Владелец", callback_data="shop_owner_from_shop")],
+        [InlineKeyboardButton(text="Товары", callback_data="products_from_shop")],
+        [InlineKeyboardButton(text="На главную", callback_data="back_from_shop")]
+    ]
+)
+
 product_buttons = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Магазин", callback_data="shop_from_product")],
@@ -32,9 +41,22 @@ product_buttons = InlineKeyboardMarkup(
     ]
 )
 
+blocked_product_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Магазин", callback_data="shop_from_product")],
+        [InlineKeyboardButton(text="На главную", callback_data="back_from_product")]
+    ]
+)
+
 seller_buttons = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Забанить", callback_data="block_from_seller")],
+        [InlineKeyboardButton(text="На главную", callback_data="back_from_seller")]
+    ]
+)
+
+blocked_seller_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
         [InlineKeyboardButton(text="На главную", callback_data="back_from_seller")]
     ]
 )
@@ -92,5 +114,25 @@ approve_block_shop_buttons = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Да", callback_data="approve_block_shop")],
         [InlineKeyboardButton(text="Нет", callback_data="not_approve_block_shop")]
+    ]
+)
+
+approve_block_seller_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Да", callback_data="approve_block_seller")],
+        [InlineKeyboardButton(text="Нет", callback_data="not_approve_block_seller")]
+    ]
+)
+
+approve_block_product_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Да", callback_data="approve_block_product")],
+        [InlineKeyboardButton(text="Нет", callback_data="not_approve_block_product")]
+    ]
+)
+
+statistics_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Назад", callback_data="back_from_statics")]
     ]
 )

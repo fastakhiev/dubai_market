@@ -5,7 +5,7 @@ from app.states.states import CurrentShop, CurrentProduct
 from app.models.shops import Shop
 from uuid import UUID
 from app.core.bot import bot
-from app.keyboards.basic import shop_buttons, product_buttons
+from app.keyboards.basic import shop_buttons, product_buttons, blocked_shop_buttons, blocked_product_buttons
 from app.models.products import Product
 
 router = Router()
@@ -22,14 +22,16 @@ async def get_shop_by_id(message: Message, state: FSMContext):
         await bot.delete_message(chat_id=message.chat.id, message_id=data["message"]["message_id"])
         send_photos = await message.answer_photo(
             photo=f"https://dubaimarketbot.ru/get_image/{shop.photo}",
-            caption=f"Название: {shop.name}\nСоциальные сети: {shop.social_networks}\n ",
-            reply_markup=shop_buttons
+            caption=f"Название: {shop.name}\nСоциальные сети: {shop.social_networks}\nСтатус: {'активен' if shop.is_active else 'забанен'}",
+            reply_markup=shop_buttons if shop.is_active else blocked_shop_buttons
         )
         messages_ids.append(send_photos.message_id)
         await state.update_data(current_shop={
             "messages_ids": messages_ids,
             "chat_id": message.chat.id,
-            "shop_id": shop_id
+            "shop_id": shop_id,
+            "shop_name": shop.name,
+            "seller_id": str(shop.user_id.id)
         })
     except Exception as e:
         print(e)
@@ -45,14 +47,15 @@ async def get_product_by_id(message: Message, state: FSMContext):
     product = await Product.objects.get(id=UUID(product_id))
     await message.delete()
     await bot.delete_message(chat_id=message.chat.id, message_id=data["message"]["message_id"])
-    # send_photos = await message.answer_media_group(media=[InputMediaPhoto(media=photo) for photo in product.photos])
+    send_photos = await message.answer_media_group(media=[InputMediaPhoto(media=f"https://dubaimarketbot.ru/get_image/{photo}") for photo in product.photos])
     send_text = await message.answer(
         f"Название: {product.title}\n"
         f"Описание: {product.description}\n"
-        f"Цена: {product.price} {product.currency}",
-        reply_markup=product_buttons
+        f"Цена: {product.price} {product.currency}\n"
+        f"Статус: {'активен' if product.is_active else 'забанен'}",
+        reply_markup=product_buttons if product.is_active else blocked_product_buttons
     )
-    # messages_ids.extend([msg.message_id for msg in send_photos])
+    messages_ids.extend([msg.message_id for msg in send_photos])
     messages_ids.append(send_text.message_id)
 
     await state.update_data(current_product={

@@ -2,12 +2,16 @@ from aiogram import Router, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
-from app.keyboards.basic import basic, search_buttons, seller_buttons, categories_list_b, search_filters, shop_buttons, approve_block_shop_buttons
-from app.states.states import SearchFilter, CurrentShop
+from app.keyboards.basic import basic, search_buttons, seller_buttons, categories_list_b, search_filters, shop_buttons, approve_block_shop_buttons, approve_block_seller_buttons, blocked_shop_buttons, blocked_seller_buttons, approve_block_product_buttons, statistics_buttons
+from app.states.states import SearchFilter, CurrentShop, CurrentOwner
 from app.models.shops import Shop
 from uuid import UUID
 from app.models.products import Product
+from app.models.users import User
 from app.core.elastic import es
+from app.core.bot import bot
+from collections import defaultdict
+
 
 router = Router()
 
@@ -88,7 +92,16 @@ async def get_shop_owner(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete()
     current_shop = await state.get_data()
     shop = await Shop.objects.select_related("user_id").get(id=UUID(current_shop["current_shop"]["shop_id"]))
-    await callback.message.answer(f"Имя: {shop.user_id.full_name}\nТелефон: {shop.user_id.phone}\nДата регистрации: {shop.user_id.created_at}\nPassport: {shop.user_id.passport}", reply_markup=seller_buttons)
+    await state.clear()
+    await state.set_state(CurrentOwner.current_owner)
+    await state.update_data(current_owner={
+        "id": str(shop.user_id.id),
+        "name": shop.user_id.full_name,
+    })
+    await callback.message.answer_photo(
+        photo=f"https://dubaimarketbot.ru/get_image/{shop.user_id.passport}",
+        caption=f"Имя: {shop.user_id.full_name}\nТелефон: {shop.user_id.phone}\nДата регистрации: {shop.user_id.created_at}\nPassport: {shop.user_id.passport}\nСтатус: {'активен' if shop.user_id.is_active else 'забанен'}",
+        reply_markup=seller_buttons if shop.user_id.is_active else blocked_seller_buttons)
     await callback.answer()
 
 
@@ -103,16 +116,17 @@ async def back_from_shop(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "shop_from_product")
 async def shop_from_product (callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
+    for i in data["current_product"]["messages_ids"]:
+        await bot.delete_message(chat_id=data["current_product"]["chat_id"], message_id=i)
     product = await Product.objects.get(id=UUID(data["current_product"]["product_id"]))
     shop = await Shop.objects.get(user_id=product.seller_id)
     await state.clear()
-    await callback.message.delete()
     messages_ids = []
     await state.set_state(CurrentShop.current_shop)
     send_photos = await callback.message.answer_photo(
-        photo=f"https://images.steamusercontent.com/ugc/52453354080448818/543783B601D5A853E3F50907B9722A314DFD92B6/?imw=512&amp;imh=320&amp;ima=fit&amp;impolicy=Letterbox&amp;imcolor=%23000000&amp;letterbox=true",
-        caption=f"Название: {shop.name}\nСоциальные сети: {shop.social_networks}\n ",
-        reply_markup=shop_buttons
+        photo=f"https://dubaimarketbot.ru/get_image/{shop.photo}",
+        caption=f"Название: {shop.name}\nСоциальные сети: {shop.social_networks}\nСтатус: {'активен' if shop.is_active else 'забанен'}",
+        reply_markup=shop_buttons if shop.is_active else blocked_shop_buttons
     )
     messages_ids.append(send_photos.message_id)
     await state.update_data(current_shop={
@@ -165,7 +179,7 @@ async def approve_block_shop(callback: CallbackQuery, state: FSMContext):
     shop = await Shop.objects.get(id=UUID(data["current_shop"]["shop_id"]))
     shop.is_active = False
     await es.update(
-        index="products",
+        index="shops",
         id=data["current_shop"]["shop_id"],
         body={
             "doc": {
@@ -184,4 +198,143 @@ async def approve_block_shop(callback: CallbackQuery, state: FSMContext):
 async def not_approve_block_shop(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.delete()
+    await callback.answer()
     await callback.message.answer("Вы отменили отказались от блокировки магазина\nВыберите действия", reply_markup=basic)
+
+
+@router.callback_query(F.data == "back_from_product")
+async def back_from_product(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    for i in data["current_product"]["messages_ids"]:
+        await bot.delete_message(chat_id=data["current_product"]["chat_id"], message_id=i)
+    await state.clear()
+    await callback.answer()
+    await callback.message.answer("Действия", reply_markup=basic)
+
+
+@router.callback_query(F.data == "block_from_seller")
+async def block_from_seller(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await callback.message.delete()
+    await callback.message.answer(
+        text=f"Вы уверены что хотите заблокировать этого продавца {data['current_owner']['name']}, вместе с ним будет заблокирован магазин и его товары",
+        reply_markup=approve_block_seller_buttons
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "approve_block_seller")
+async def approve_block_seller(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    products = await Product.objects.filter(seller_id=UUID(data["current_owner"]["id"])).all()
+    for i in products:
+        i.is_active = False
+        await i.update()
+        await es.update(
+            index="products",
+            id=str(i.id),
+            body={
+                "doc": {
+                    "is_active": False
+                }
+            }
+        )
+
+    shop = await Shop.objects.get(user_id=UUID(data["current_owner"]["id"]))
+    shop.is_active = False
+    await es.update(
+        index="shops",
+        id=str(shop.id),
+        body={
+            "doc": {
+                "is_active": False
+            }
+        }
+    )
+    await shop.update()
+    seller = await User.objects.get(id=UUID(data["current_owner"]["id"]))
+    seller.is_active = False
+    await seller.update()
+    await state.clear()
+    await callback.message.delete()
+    await callback.answer()
+    await callback.message.answer(f"Вы заблокировали продавца {data['current_owner']['name']} его магазин и товары\nВыберите действия", reply_markup=basic)
+
+
+@router.callback_query(F.data == "not_approve_block_seller")
+async def not_approve_block_seller(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await state.clear()
+    await callback.message.answer("Вы отменили отказались от блокировки продавца\nВыберите действия", reply_markup=basic)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "block_from_product")
+async def block_from_product(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    for i in data["current_product"]["messages_ids"]:
+        await bot.delete_message(chat_id=data["current_product"]["chat_id"], message_id=i)
+    await callback.message.answer("Вы уверены что хотите забанить товар?", reply_markup=approve_block_product_buttons)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "not_approve_block_product")
+async def not_approve_block_product(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await state.clear()
+    await callback.message.answer("Вы отменили отказались от блокировки товара\nВыберите действия",
+                                  reply_markup=basic)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "approve_block_product")
+async def approve_block_product(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await callback.message.delete()
+    product = await Product.objects.get(id=UUID(data["current_product"]["product_id"]))
+    product.is_active = False
+    await product.update()
+    await es.update(
+        index="products",
+        id=str(product.id),
+        body={
+            "doc": {
+                "is_active": False
+            }
+        }
+    )
+    await state.clear()
+    await callback.answer()
+    await callback.message.answer(f"Вы заблокировали товар\nВыберите действия", reply_markup=basic)
+
+
+@router.callback_query(F.data == "statistics")
+async def get_statistics(callback: CallbackQuery):
+    count_users = await User.objects.count()
+    products = await Product.objects.all()
+
+    stats = defaultdict(lambda: {"active": 0, "inactive": 0})
+
+    for product in products:
+        if product.is_active:
+            stats[product.category]["active"] += 1
+        else:
+            stats[product.category]["inactive"] += 1
+
+    result_products = "\n".join(
+        f"{category}: активных={counts['active']}, неактивных={counts['inactive']}"
+        for category, counts in stats.items()
+    )
+    await callback.message.delete()
+    await callback.answer()
+    await callback.message.answer(
+        text=f"Количество продавцов и  покупателей: {count_users}\n{result_products}",
+        reply_markup=statistics_buttons
+    )
+
+
+@router.callback_query(F.data == "back_from_statics")
+async def back_from_statics(callback: CallbackQuery):
+    await callback.message.delete()
+    await callback.message.answer("Действия", reply_markup=basic)
+    await callback.answer()
