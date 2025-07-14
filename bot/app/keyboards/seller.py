@@ -5,6 +5,13 @@ from aiogram.types import (
     InlineKeyboardMarkup,
 )
 
+reg_seller_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Зарегистрироваться", callback_data="reg_seller")],
+        [InlineKeyboardButton(text="Переключиться на покупателя", callback_data="back_to_buyer")]
+    ]
+)
+
 
 seller = InlineKeyboardMarkup(
     inline_keyboard=[

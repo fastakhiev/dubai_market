@@ -10,4 +10,25 @@ services:
       - ./redis-config/redis.conf:/usr/local/etc/redis/redis.conf
     ports:
       - "6371:6379"
-    
+    networks:
+      - dubai_bot
+
+  admin_dubai_bot:
+    build:
+      context: .
+      dockerfile: dockerfile
+    volumes:
+      - ./backend:/usr/app
+    restart: always
+    expose:
+      - 8006
+    ports:
+      - "8006:8006"
+    command: sh -c "python3 main.py"
+    networks:
+      - dubai_bot
+
+
+networks:
+  dubai_bot:
+    external: true

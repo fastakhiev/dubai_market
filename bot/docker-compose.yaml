@@ -17,6 +17,8 @@ services:
       retries: 3
       start_period: 30s
     restart: always
+    networks:
+      - dubai_bot
 
   redis:
     image: redis:7
@@ -29,6 +31,8 @@ services:
       - ./redis-config/redis.conf:/usr/local/etc/redis/redis.conf
     ports:
       - "6379:6379"
+    networks:
+      - dubai_bot
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
@@ -41,6 +45,8 @@ services:
       - "9300:9300"
     volumes:
       - ./dockerfiles/elasticsearch/data:/usr/share/elasticsearch/data
+    networks:
+      - dubai_bot
 
 
   dubai_bot:
@@ -51,10 +57,16 @@ services:
       - ./backend:/usr/app
     restart: always
     expose:
-      - 8002
+      - 8005
     ports:
-      - "8002:8002"
+      - "8005:8005"
     depends_on:
       postgresdb:
         condition: service_healthy
     command: sh -c "python3 main.py"
+    networks:
+      - dubai_bot
+
+networks:
+  dubai_bot:
+    external: true

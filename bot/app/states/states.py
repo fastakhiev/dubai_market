@@ -5,8 +5,10 @@ class SignUp(StatesGroup):
     telegram_id = State()
     full_name = State()
     phone = State()
+
+
+class RegSeller(StatesGroup):
     passport = State()
-    role = State()
 
 
 class SearchFilter(StatesGroup):

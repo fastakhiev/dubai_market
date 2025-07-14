@@ -27,7 +27,6 @@ def upgrade() -> None:
         sa.Column("telegram_id", sa.String(length=100), unique=True, nullable=False),
         sa.Column("full_name", sa.String(length=100), nullable=False),
         sa.Column("phone", sa.String(length=50), nullable=False),
-        sa.Column("role", sa.String(length=50), nullable=False),
         sa.Column("passport", sa.String(length=1000), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False),

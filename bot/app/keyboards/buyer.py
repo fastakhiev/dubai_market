@@ -49,6 +49,12 @@ product_buttons = InlineKeyboardMarkup(
     ]
 )
 
+my_product_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Назад", callback_data="back_from_product", switch_inline_query_current_chat="")]
+    ]
+)
+
 search_filters = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Поиск без фильтра", callback_data="without_filter")],

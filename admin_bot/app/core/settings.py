@@ -7,6 +7,9 @@ load_dotenv()
 
 class Settings:
     TELEGRAM_TOKEN: str = os.environ.get("TELEGRAM_TOKEN")
+    CLIENT_TELEGRAM_TOKEN: str = os.environ.get("CLIENT_TELEGRAM_TOKEN")
+    CLIENT_BOT_HOST: str = os.environ.get("CLIENT_BOT_HOST")
+    CLIENT_BOT_PORT: int = os.environ.get("CLIENT_BOT_PORT")
     POSTGRES_USER: str = os.getenv("POSTGRES_USER")
     POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD")
     POSTGRES_HOST: str = os.getenv("POSTGRES_HOST")

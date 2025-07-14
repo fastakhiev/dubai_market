@@ -7,9 +7,10 @@ from app.models.products import Product
 from app.models.orders import Order
 from app.models.questions import Question
 from app.states.states import CurrentProduct, CurrentOrder, CurrentQuestion
-from app.keyboards.buyer import product_buttons, inline_back_buyer_from_order
+from app.keyboards.buyer import product_buttons, inline_back_buyer_from_order, my_product_buttons
 from app.keyboards.seller import product_inline_buttons_seller, inline_back_button, order_buttons, question_button
 from app.core.bot import bot
+from app.models.users import User
 
 router = Router()
 
@@ -99,17 +100,19 @@ async def get_product_by_id(message: Message, state: FSMContext):
         product, user_type = message.text.split(":")
         product_id = product.split("product_")[1]
         product = await Product.objects.get(id=UUID(product_id))
+        user = await User.objects.get(telegram_id=str(message.from_user.id))
         await message.delete()
         await bot.delete_message(chat_id=message.chat.id, message_id=data["message"]["message_id"])
         send_photos = await message.answer_media_group(media=[InputMediaPhoto(media=photo) for photo in product.photos])
         if user_type == "buyer":
-            keyboard = product_buttons
+            keyboard = my_product_buttons if user.id == product.seller_id.id else product_buttons
         else:
             keyboard = product_inline_buttons_seller
         send_text = await message.answer(
             f"Название: {product.title}\n"
             f"Описание: {product.description}\n"
-            f"Цена: {product.price} {product.currency}",
+            f"Цена: {product.price} {product.currency}\n"
+            f"{'Это ваш товар' if user.id == product.seller_id.id else ''}",
             reply_markup=keyboard
         )
         messages_ids.extend([msg.message_id for msg in send_photos])

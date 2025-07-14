@@ -11,6 +11,10 @@ from app.models.users import User
 from app.core.elastic import es
 from app.core.bot import bot
 from collections import defaultdict
+from app.core.client_bot import client_bot
+from app.keyboards.clients import notification_button
+import httpx
+from app.core import config
 
 
 router = Router()
@@ -176,7 +180,7 @@ async def approve_block_shop(callback: CallbackQuery, state: FSMContext):
                 }
             }
         )
-    shop = await Shop.objects.get(id=UUID(data["current_shop"]["shop_id"]))
+    shop = await Shop.objects.select_related("user_id").get(id=UUID(data["current_shop"]["shop_id"]))
     shop.is_active = False
     await es.update(
         index="shops",
@@ -188,6 +192,11 @@ async def approve_block_shop(callback: CallbackQuery, state: FSMContext):
         }
     )
     await shop.update()
+    await client_bot.send_message(
+        chat_id=shop.user_id.telegram_id,
+        text=f"Ваш магазин {shop.name} и его товары были заблокированы администратором",
+        reply_markup=notification_button
+    )
     await state.clear()
     await callback.answer()
     await callback.message.delete()
@@ -254,7 +263,18 @@ async def approve_block_seller(callback: CallbackQuery, state: FSMContext):
     await shop.update()
     seller = await User.objects.get(id=UUID(data["current_owner"]["id"]))
     seller.is_active = False
+    seller_tg_id = seller.telegram_id
     await seller.update()
+    httpx.post(
+        f"http://{config.CLIENT_BOT_HOST}:{config.CLIENT_BOT_PORT}/ban_user",
+        json={
+            "telegram_id": seller_tg_id
+        }
+    )
+    await client_bot.send_message(
+        chat_id=seller_tg_id,
+        text=f"Вы и ваш магазин с товарами были заблокированы администратором",
+    )
     await state.clear()
     await callback.message.delete()
     await callback.answer()
@@ -291,7 +311,7 @@ async def not_approve_block_product(callback: CallbackQuery, state: FSMContext):
 async def approve_block_product(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await callback.message.delete()
-    product = await Product.objects.get(id=UUID(data["current_product"]["product_id"]))
+    product = await Product.objects.select_related('seller_id').get(id=UUID(data["current_product"]["product_id"]))
     product.is_active = False
     await product.update()
     await es.update(
@@ -302,6 +322,11 @@ async def approve_block_product(callback: CallbackQuery, state: FSMContext):
                 "is_active": False
             }
         }
+    )
+    await client_bot.send_message(
+        chat_id=product.seller_id.telegram_id,
+        text=f"Ваш товар {product.title} был заблокирован администратором",
+        reply_markup=notification_button
     )
     await state.clear()
     await callback.answer()
