@@ -7,6 +7,7 @@ load_dotenv()
 
 class Settings:
     TELEGRAM_TOKEN: str = os.environ.get("TELEGRAM_TOKEN")
+    ADMIN_TELEGRAM_TOKEN: str = os.environ.get("ADMIN_TELEGRAM_TOKEN")
     POSTGRES_USER: str = os.getenv("POSTGRES_USER")
     POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD")
     POSTGRES_HOST: str = os.getenv("POSTGRES_HOST")
@@ -17,6 +18,7 @@ class Settings:
     FILES_BUCKET_URL: str = os.getenv("FILES_BUCKET_URL")
     REDIS_HOST: str = os.getenv("REDIS_HOST")
     REDIS_PORT: int = os.getenv("REDIS_PORT")
+    ADMIN_TELEGRAM_IDS: list[int] = list(map(int, os.getenv("ADMIN_TELEGRAM_IDS", "").split(",")))
 
 
 @lru_cache()

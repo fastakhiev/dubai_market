@@ -5,7 +5,8 @@ from app.states.states import CurrentShop, CurrentProduct
 from app.models.shops import Shop
 from uuid import UUID
 from app.core.bot import bot
-from app.keyboards.basic import shop_buttons, product_buttons, blocked_shop_buttons, blocked_product_buttons
+from app.keyboards.basic import shop_buttons, product_buttons, blocked_shop_buttons, blocked_product_buttons, \
+    moderation_product_buttons, moderation_passport_buttons
 from app.models.products import Product
 
 router = Router()
@@ -62,4 +63,55 @@ async def get_product_by_id(message: Message, state: FSMContext):
         "messages_ids": messages_ids,
         "chat_id": message.chat.id,
         "product_id": product_id
+    })
+
+
+@router.message(F.text.startswith("moderation_product_"))
+async def get_product_by_id(message: Message, state: FSMContext):
+    await state.set_state(CurrentProduct.current_product)
+    messages_ids = []
+    data = await state.get_data()
+    product_id = message.text.split("moderation_product_")[1]
+    product = await Product.objects.get(id=UUID(product_id))
+    await message.delete()
+    await bot.delete_message(chat_id=message.chat.id, message_id=data["message"]["message_id"])
+    send_photos = await message.answer_media_group(media=[InputMediaPhoto(media=f"https://dubaimarketbot.ru/get_image/{photo}") for photo in product.photos])
+    send_text = await message.answer(
+        f"Название: {product.title}\n"
+        f"Описание: {product.description}\n"
+        f"Цена: {product.price} {product.currency}\n",
+        reply_markup=moderation_product_buttons
+    )
+    messages_ids.extend([msg.message_id for msg in send_photos])
+    messages_ids.append(send_text.message_id)
+
+    await state.update_data(current_product={
+        "messages_ids": messages_ids,
+        "chat_id": message.chat.id,
+        "product_id": product_id
+    })
+
+
+@router.message(F.text.startswith("moderation_passport_"))
+async def get_product_by_id(message: Message, state: FSMContext):
+    await state.set_state(CurrentShop.current_shop)
+    messages_ids = []
+    data = await state.get_data()
+    shop_id = message.text.split("moderation_passport_")[1]
+    shop = await Shop.objects.select_related("user_id").get(id=UUID(shop_id))
+    await message.delete()
+    await bot.delete_message(chat_id=message.chat.id, message_id=data["message"]["message_id"])
+    send_text = await message.answer_photo(
+        photo=f"https://dubaimarketbot.ru/get_image/{shop.user_id.passport}",
+        caption=f"Название: {shop.name}\n"
+        f"Описание: {shop.description}\n"
+        f"Социальные сети: {shop.social_networks}\n",
+        reply_markup=moderation_passport_buttons
+    )
+    messages_ids.append(send_text.message_id)
+
+    await state.update_data(current_shop={
+        "messages_ids": messages_ids,
+        "chat_id": message.chat.id,
+        "shop_id": shop_id
     })

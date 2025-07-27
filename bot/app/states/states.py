@@ -19,6 +19,7 @@ class SearchFilter(StatesGroup):
 class CreateShop(StatesGroup):
     name = State()
     photo = State()
+    description = State()
     social_networks = State()
 
 

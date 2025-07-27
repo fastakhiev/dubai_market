@@ -3,7 +3,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from app.keyboards.basic import basic, search_buttons, seller_buttons, categories_list_b, search_filters, shop_buttons, approve_block_shop_buttons, approve_block_seller_buttons, blocked_shop_buttons, blocked_seller_buttons, approve_block_product_buttons, statistics_buttons
-from app.states.states import SearchFilter, CurrentShop, CurrentOwner
+from app.states.states import SearchFilter, CurrentShop, CurrentOwner, RejectProduct, RejectPassport
 from app.models.shops import Shop
 from uuid import UUID
 from app.models.products import Product
@@ -363,3 +363,208 @@ async def back_from_statics(callback: CallbackQuery):
     await callback.message.delete()
     await callback.message.answer("Действия", reply_markup=basic)
     await callback.answer()
+
+
+@router.callback_query(F.data == "moderation_products")
+async def get_moderation_products(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(SearchFilter.message)
+    await state.set_state(SearchFilter.type)
+    await state.set_state(SearchFilter.filter)
+    message = await callback.message.edit_text("Товары на модерации", reply_markup=search_buttons)
+    await state.update_data(filter={}, message={
+        "message_id": message.message_id
+    }, type="moderation_products")
+    await callback.answer()
+
+
+@router.callback_query(F.data == "back_from_moderation_product")
+async def back_from_moderation_product(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await state.clear()
+    for i in data["current_product"]["messages_ids"]:
+        await bot.delete_message(chat_id=data["current_product"]["chat_id"], message_id=i)
+    await state.set_state(SearchFilter.message)
+    await state.set_state(SearchFilter.type)
+    await state.set_state(SearchFilter.filter)
+    message = await callback.message.answer("Товары на модерации", reply_markup=search_buttons)
+    await state.update_data(filter={}, message={
+            "message_id": message.message_id
+        }, type="moderation_products")
+    await callback.answer()
+
+
+@router.callback_query(F.data == "approve_moderation_products")
+async def approve_moderation_products(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await state.clear()
+    for i in data["current_product"]["messages_ids"]:
+        await bot.delete_message(chat_id=data["current_product"]["chat_id"], message_id=i)
+
+    product = await Product.objects.select_related("seller_id").get(id=UUID(data["current_product"]["product_id"]))
+    product.is_moderation = False
+    product.is_active = True
+    await product.update()
+    await es.update(
+        index="products",
+        id=str(product.id),
+        body={
+            "doc": {
+                "is_moderation": False,
+                "is_active": True
+            }
+        }
+    )
+    await state.set_state(SearchFilter.message)
+    await state.set_state(SearchFilter.type)
+    await state.set_state(SearchFilter.filter)
+    message = await callback.message.answer("Вы одобрили товар\nТовары на модерации", reply_markup=search_buttons)
+    await state.update_data(filter={}, message={
+            "message_id": message.message_id
+        }, type="moderation_products")
+    await client_bot.send_message(chat_id=str(product.seller_id.telegram_id), text=f"Ваш товар {product.title} прошел проверку")
+    await callback.answer()
+
+
+@router.callback_query(F.data == "reject_moderation_products")
+async def reject_moderation_products(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await state.clear()
+    for i in data["current_product"]["messages_ids"]:
+        await bot.delete_message(chat_id=data["current_product"]["chat_id"], message_id=i)
+
+    product = await Product.objects.select_related("seller_id").get(id=UUID(data["current_product"]["product_id"]))
+    product.is_moderation = False
+    product.is_active = False
+    await product.update()
+    await es.update(
+        index="products",
+        id=str(product.id),
+        body={
+            "doc": {
+                "is_moderation": False,
+                "is_active": False
+            }
+        }
+    )
+    await state.set_state(RejectProduct.telegram_id)
+    await state.update_data(telegram_id=product.seller_id.telegram_id)
+    await state.set_state(RejectProduct.problem_product)
+    await callback.message.answer("Введите причину отказа")
+    await callback.answer()
+
+
+@router.message(RejectProduct.problem_product)
+async def enter_problem_product(message: Message, state: FSMContext):
+    data = await state.get_data()
+    await state.clear()
+    await client_bot.send_message(chat_id=str(data["telegram_id"]),
+                                  text=f"Ваш товар не прошел проверку\nПричина: {message.text}")
+    await state.set_state(SearchFilter.message)
+    await state.set_state(SearchFilter.type)
+    await state.set_state(SearchFilter.filter)
+    message = await message.answer("Вы отклонили товар\nТовары на модерации", reply_markup=search_buttons)
+    await state.update_data(filter={}, message={
+        "message_id": message.message_id
+    }, type="moderation_products")
+
+
+@router.callback_query(F.data == "moderation_passports")
+async def get_moderation_products(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(SearchFilter.message)
+    await state.set_state(SearchFilter.type)
+    await state.set_state(SearchFilter.filter)
+    message = await callback.message.edit_text("Паспорта на модерации", reply_markup=search_buttons)
+    await state.update_data(filter={}, message={
+        "message_id": message.message_id
+    }, type="moderation_passports")
+    await callback.answer()
+
+
+@router.callback_query(F.data == "back_from_moderation_passport")
+async def back_from_moderation_passport(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await state.clear()
+    for i in data["current_shop"]["messages_ids"]:
+        await bot.delete_message(chat_id=data["current_shop"]["chat_id"], message_id=i)
+    await state.set_state(SearchFilter.message)
+    await state.set_state(SearchFilter.type)
+    await state.set_state(SearchFilter.filter)
+    message = await callback.message.answer("Паспорта на модерации", reply_markup=search_buttons)
+    await state.update_data(filter={}, message={
+            "message_id": message.message_id
+        }, type="moderation_passports")
+    await callback.answer()
+
+
+@router.callback_query(F.data == "approve_moderation_passports")
+async def approve_moderation_passports(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await state.clear()
+    for i in data["current_shop"]["messages_ids"]:
+        await bot.delete_message(chat_id=data["current_shop"]["chat_id"], message_id=i)
+
+    shop = await Shop.objects.select_related("user_id").get(id=UUID(data["current_shop"]["shop_id"]))
+    shop.is_moderation = False
+    shop.is_verified = True
+    await shop.update()
+    await es.update(
+        index="shops",
+        id=str(shop.id),
+        body={
+            "doc": {
+                "is_moderation": False,
+                "is_verified": True
+            }
+        }
+    )
+    await state.set_state(SearchFilter.message)
+    await state.set_state(SearchFilter.type)
+    await state.set_state(SearchFilter.filter)
+    message = await callback.message.answer("Вы одобрили паспорт\nПаспорта на модерации", reply_markup=search_buttons)
+    await state.update_data(filter={}, message={
+            "message_id": message.message_id
+        }, type="moderation_passports")
+    await client_bot.send_message(chat_id=str(shop.user_id.telegram_id), text=f"Ваш паспорт прошел проверку")
+    await callback.answer()
+
+
+@router.callback_query(F.data == "reject_moderation_passports")
+async def reject_moderation_products(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await state.clear()
+    for i in data["current_shop"]["messages_ids"]:
+        await bot.delete_message(chat_id=data["current_shop"]["chat_id"], message_id=i)
+
+    shop = await Shop.objects.select_related("user_id").get(id=UUID(data["current_shop"]["shop_id"]))
+    shop.is_moderation = False
+    shop.is_verified = False
+    await shop.update()
+    await es.update(
+        index="shops",
+        id=str(shop.id),
+        body={
+            "doc": {
+                "is_moderation": False,
+                "is_verified": False
+            }
+        }
+    )
+    await state.set_state(RejectPassport.telegram_id)
+    await state.update_data(telegram_id=shop.user_id.telegram_id)
+    await state.set_state(RejectPassport.problem_passport)
+    await callback.message.answer("Введите причину отказа")
+    await callback.answer()
+
+@router.message(RejectPassport.problem_passport)
+async def enter_problem_passport(message: Message, state: FSMContext):
+    data = await state.get_data()
+    await state.clear()
+    await client_bot.send_message(chat_id=str(data["telegram_id"]),
+                                  text=f"Ваш паспорт не прошел проверку\nПричина: {message.text}")
+    await state.set_state(SearchFilter.message)
+    await state.set_state(SearchFilter.type)
+    await state.set_state(SearchFilter.filter)
+    message = await message.answer("Вы отклонили паспорт\nПаспорта на модерации", reply_markup=search_buttons)
+    await state.update_data(filter={}, message={
+        "message_id": message.message_id
+    }, type="moderation_passports")

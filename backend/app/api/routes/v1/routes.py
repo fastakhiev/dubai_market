@@ -1,3 +1,4 @@
+from exceptiongroup import catch
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from app.schemas.upload import UploadImage
@@ -43,13 +44,15 @@ async def upload_image(
             data=io.BytesIO(content),
             length=len(content),
         )
+        try:
+            await Photo.objects.create(
+                file_id=upload_data.file_id,
+                file_name=filename
+            )
+            return {"status": "ok", "filename": filename}
+        except:
+            return {"status": "ok", "filename": filename}
 
-        await Photo.objects.create(
-            file_id=upload_data.file_id,
-            file_name=filename
-        )
-
-        return {"status": "ok", "filename": filename}
 
 
 @router.get("/get_image/{file_id}")

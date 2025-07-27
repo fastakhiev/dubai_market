@@ -12,13 +12,18 @@ reg_seller_buttons = InlineKeyboardMarkup(
     ]
 )
 
+# upload_passport_buttons = InlineKeyboardMarkup(
+#     inline_keyboard=[
+#         [InlineKeyboardButton(text="Не загружать паспорт", callback_data="do_not_upload_passport")]
+#     ]
+# )
+
 
 seller = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text="Мой магазин", callback_data="my_shop")],
+        [InlineKeyboardButton(text="Мой профиль", callback_data="my_shop")],
         [InlineKeyboardButton(text="Мои товары", callback_data="my_products")],
         [InlineKeyboardButton(text="Вопросы", callback_data="questions_seller")],
-        [InlineKeyboardButton(text="Создать товар", callback_data="create_product")],
         [InlineKeyboardButton(text="Заказы", callback_data="orders_seller")]
     ]
 )
@@ -29,9 +34,17 @@ inline_back_button = InlineKeyboardMarkup(
     ]
 )
 
+my_shop_profile = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Загрузить паспорт", callback_data="upload_passport_later")],
+        [InlineKeyboardButton(text="Назад", callback_data="back")]
+    ]
+)
+
 my_products = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Поиск", switch_inline_query_current_chat="")],
+        [InlineKeyboardButton(text="Создать товар", callback_data="create_product")],
         [InlineKeyboardButton(text="Назад", callback_data="back")]
     ]
 )

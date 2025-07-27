@@ -1,13 +1,16 @@
+
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InputMediaPhoto
 from aiogram.fsm.context import FSMContext
 from uuid import UUID
 
-from app.keyboards.buyer import search_filters, search_buttons, categories_list_b, reply_back_buyer, buyer as kb_buyer, orders_list_buttons
+from app.keyboards.buyer import search_filters, search_buttons, categories_list_b, reply_back_buyer, buyer as kb_buyer, \
+    orders_list_buttons, back_from_shop_buyer_buttons, my_product_buttons, product_buttons
 from app.states.states import SearchFilter, CreateOrder, CreateQuestion
 from app.keyboards.common import notification_button
 from app.models.orders import Order
 from app.models.users import User
+from app.models.shops import Shop
 from app.models.products import Product
 from app.models.questions import Question
 from app.core.bot import bot
@@ -177,3 +180,44 @@ async def enter_question(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Выберете действие", reply_markup=kb_buyer)
 
+
+@router.callback_query(F.data == "get_seller_from_product")
+async def get_seller_from_product(callback: CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    for i in state_data["current_product"]["messages_ids"]:
+        await bot.delete_message(chat_id=state_data["current_product"]["chat_id"], message_id=i)
+    product = await Product.objects.get(id=UUID(state_data["current_product"]["product_id"]))
+    shop = await Shop.objects.select_related("user_id").get(user_id__id=product.seller_id)
+    await callback.message.answer_photo(
+        photo=f"https://dubaimarketbot.ru/get_image/{shop.photo}",
+        caption=f"Название: {shop.name}\n"
+        f"Описание: {shop.description}\n"
+        f"Социальные сети: {shop.social_networks}\n"
+        f"{'Верифицированный продавец' if shop.is_verified else 'Не верифицированный продавец'}",
+        reply_markup=back_from_shop_buyer_buttons
+    )
+    await callback.answer()
+
+@router.callback_query(F.data == "back_from_shop_buyer")
+async def back_from_shop_buyer(callback: CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    await callback.message.delete()
+    product = await Product.objects.get(id=UUID(state_data["current_product"]["product_id"]))
+    await state.clear()
+    send_photos = await callback.message.answer_media_group(media=[InputMediaPhoto(media=photo) for photo in product.photos])
+    send_text = await callback.message.answer(
+        f"Название: {product.title}\n"
+        f"Описание: {product.description}\n"
+        f"Цена: {product.price} {product.currency}\n",
+        reply_markup=product_buttons
+    )
+    messages_ids = []
+
+    messages_ids.extend([msg.message_id for msg in send_photos])
+    messages_ids.append(send_text.message_id)
+    await state.update_data(current_product={
+        "messages_ids": messages_ids,
+        "chat_id": callback.message.chat.id,
+        "product_id": str(product.id)
+    })
+    await callback.answer()

@@ -36,6 +36,7 @@ def upgrade():
         sa.Column("category", sa.String(100), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
+        sa.Column("is_moderation", sa.Boolean(), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )

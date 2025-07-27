@@ -44,8 +44,15 @@ reply_back_buyer = ReplyKeyboardMarkup(
 product_buttons = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Купить товар", callback_data="buy_product")],
+        [InlineKeyboardButton(text="Продавец", callback_data="get_seller_from_product")],
         [InlineKeyboardButton(text="Задать вопрос", callback_data="ask_product")],
         [InlineKeyboardButton(text="Назад", callback_data="back_from_product", switch_inline_query_current_chat="")]
+    ]
+)
+
+back_from_shop_buyer_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Назад", callback_data="back_from_shop_buyer")]
     ]
 )
 

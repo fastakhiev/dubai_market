@@ -1,5 +1,5 @@
 services:
-  redis:
+  admin_redis:
     image: redis:7
     container_name: admin_redis
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]

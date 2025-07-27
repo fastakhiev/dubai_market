@@ -14,7 +14,9 @@ from app.models.orders import Order
 from app.models.questions import Question
 from app.keyboards.seller import currency, my_products
 from app.core.bot import bot
-from app.states.states import CreateProduct, SearchFilter, ApproveOrder, AnswerQuestion
+from app.core.admin_bot import admin_bot
+from app.core import config
+from app.states.states import CreateProduct, SearchFilter, ApproveOrder, AnswerQuestion, RegSeller
 from app.middlewares.album_middleware import AlbumMiddleware
 from app.core.elastic import es
 from app.keyboards.seller import (
@@ -23,7 +25,8 @@ from app.keyboards.seller import (
     currency_list,
     cancel_button,
     seller as seller_kb,
-    inline_back_button
+    inline_back_button,
+    my_shop_profile
 )
 
 
@@ -36,12 +39,19 @@ async def get_my_shop(callback: CallbackQuery):
     shop = await Shop.objects.select_related("user_id").get(
         user_id__telegram_id=str(callback.from_user.id)
     )
+    if shop.is_verified:
+        final_message = "Верифицированный продавец"
+    else:
+        if shop.is_moderation:
+            final_message = "Паспорт на проверке"
+        else:
+            final_message = "Для того чтобы получить отметку «Верифицированный продавец» загрузите паспорт"
     await callback.message.edit_media(
         media=InputMediaPhoto(
             media=shop.photo,
-            caption=f"Название: {shop.name}\nСоциальные сети: {shop.social_networks}\n "
+            caption=f"Название: {shop.name}\nСоциальные сети: {shop.social_networks}\n \n\n{final_message}"
         ),
-        reply_markup=inline_back_button
+        reply_markup=inline_back_button if shop.is_verified or shop.is_moderation else my_shop_profile
     )
     await callback.answer()
 
@@ -131,9 +141,19 @@ async def create_product_enter_description(message: Message, state: FSMContext):
 
 @router.message(CreateProduct.price)
 async def create_product_enter_price(message: Message, state: FSMContext):
-    await state.update_data(price=message.text)
-    await state.set_state(CreateProduct.currency)
-    await message.answer("Выберете валюту", reply_markup=currency)
+    text = message.text.replace(',', '.').strip()
+
+    try:
+        price = float(text)
+        if price <= 0:
+            raise ValueError("Цена должна быть положительным числом.")
+
+        await state.update_data(price=price)
+        await state.set_state(CreateProduct.currency)
+        await message.answer("Выберите валюту", reply_markup=currency)
+
+    except ValueError:
+        await message.answer("Пожалуйста, введите корректную цену (например: 100 или 99.99)")
 
 
 @router.callback_query(lambda c: c.data in currency_list)
@@ -186,7 +206,8 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
         photos=list(data["photos"]),
         thumbnail=thumbnail,
         category=data["category"],
-        is_active=True
+        is_moderation=True,
+        is_active=False
     )
     product_dict = product.model_dump()
     product_dict["id"] = str(product_dict["id"])
@@ -203,7 +224,8 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
             "seller_id": str(product.seller_id.id),
             "thumbnail": product.thumbnail,
             "category": product.category,
-            "is_active": True
+            "is_moderation": True,
+            "is_active": False
         })
         print(res)
         print("Indexed successfully")
@@ -211,6 +233,9 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
         import traceback
         print("Ошибка при индексации:")
         traceback.print_exc()
+    for i in config.ADMIN_TELEGRAM_IDS:
+        await admin_bot.send_message(chat_id=i, text=f"Новый товар {product.title}")
+
     await callback.message.answer("Товар создан", reply_markup=seller_kb)
 
 
@@ -291,3 +316,12 @@ async def enter_answer_question(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Вы ответили на вопрос", reply_markup=ReplyKeyboardRemove())
     await message.answer("Выбрете действие", reply_markup=seller_kb)
+
+
+@router.callback_query(F.data == "upload_passport_later")
+async def upload_passport_later(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.delete()
+    await callback.answer()
+    await callback.message.answer("Загрузите фото вашего паспорта для получения отметки «Верифицированный продавец»")
+    await state.set_state(RegSeller.passport)

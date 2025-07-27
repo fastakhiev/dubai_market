@@ -26,6 +26,7 @@ def upgrade() -> None:
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("name", sa.String(length=100), nullable=False),
         sa.Column("photo", sa.String(length=100), nullable=False),
+        sa.Column("description", sa.String(length=512), nullable=True),
         sa.Column("social_networks", sa.String(length=1000), nullable=True),
         sa.Column(
             "user_id",
@@ -35,6 +36,8 @@ def upgrade() -> None:
             unique=True,
         ),
         sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("is_moderation", sa.Boolean(), nullable=False),
+        sa.Column("is_verified", sa.Boolean(), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )

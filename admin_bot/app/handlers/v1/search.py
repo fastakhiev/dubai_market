@@ -1,6 +1,7 @@
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
-
+from app.models.products import Product
+from app.models.shops import Shop
 from app.core.elastic import es
 from aiogram.types import (
     InlineQuery,
@@ -32,6 +33,42 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
 
     filter_dict = data["filter"]
     must_conditions = []
+
+    if data['type'] == "moderation_products":
+        moderation_products = await Product.objects.filter(is_moderation=True).all()
+        results = []
+        for i in moderation_products:
+            results.append(
+                InlineQueryResultArticle(
+                    id=str(i.id),
+                    title=i.title,
+                    thumb_url=f"https://dubaimarketbot.ru/get_image/{i.thumbnail}",
+                    description=f"{i.description}",
+                    input_message_content=InputTextMessageContent(
+                        message_text=f"moderation_product_{str(i.id)}"
+                    )
+                )
+            )
+        await inline_query.answer(results, cache_time=1)
+        return
+
+    if data['type'] == "moderation_passports":
+        moderation_passports = await Shop.objects.select_related("user_id").filter(is_moderation=True).all()
+        results = []
+        for i in moderation_passports:
+            results.append(
+                InlineQueryResultArticle(
+                    id=str(i.id),
+                    title=i.name,
+                    thumb_url=f"https://dubaimarketbot.ru/get_image/{i.user_id.passport}",
+                    description=f"{i.description}",
+                    input_message_content=InputTextMessageContent(
+                        message_text=f"moderation_passport_{str(i.id)}"
+                    )
+                )
+            )
+        await inline_query.answer(results, cache_time=1)
+        return
 
     for key, value in filter_dict.items():
         must_conditions.append({

@@ -161,7 +161,7 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
             InlineQueryResultArticle(
                 id=str(product["id"]),
                 title=f'{product["title"]}, {product["price"]} {product["currency"]}',
-                description=f"{product['description']}, Статус: {'активен' if product['is_active'] else 'забанен' if data['message']['type'] == 'seller' else ''}",
+                description=f"{product['description']}, Статус: {'активен' if product['is_active'] else 'забанен' if data['message']['type'] == 'seller' and product['is_moderation'] is False else 'На проверке'}",
                 thumb_url=f"https://dubaimarketbot.ru/get_image/{product['thumbnail']}",
                 input_message_content=InputTextMessageContent(
                     message_text=f"product_{product['id']}:{data['message']['type']}"

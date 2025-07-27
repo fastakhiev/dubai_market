@@ -17,3 +17,12 @@ class CurrentProduct(StatesGroup):
 
 class CurrentOwner(StatesGroup):
     current_owner = State()
+
+
+class RejectProduct(StatesGroup):
+    problem_product = State()
+    telegram_id = State()
+
+class RejectPassport(StatesGroup):
+    problem_passport = State()
+    telegram_id = State()

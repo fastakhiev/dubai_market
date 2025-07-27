@@ -19,4 +19,5 @@ class Product(ormar.Model):
     category: str = ormar.String(max_length=100, nullable=False)
     created_at: datetime = ormar.DateTime(nullable=False, default=datetime.now())
     updated_at: datetime = ormar.DateTime(nullable=False, default=datetime.now())
+    is_moderation: bool = ormar.Boolean(nullable=False)
     is_active: bool = ormar.Boolean(nullable=False)

@@ -3,9 +3,11 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 basic = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text="Магазины", callback_data="shops")],
+        [InlineKeyboardButton(text="Профили продавцов", callback_data="shops")],
         [InlineKeyboardButton(text="Статистика", callback_data="statistics")],
-        [InlineKeyboardButton(text="Товары", callback_data="products")]
+        [InlineKeyboardButton(text="Товары", callback_data="products")],
+        [InlineKeyboardButton(text="Товары на проверке", callback_data="moderation_products")],
+        [InlineKeyboardButton(text="Паспорта на проверке", callback_data="moderation_passports")]
     ]
 )
 
@@ -134,5 +136,21 @@ approve_block_product_buttons = InlineKeyboardMarkup(
 statistics_buttons = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Назад", callback_data="back_from_statics")]
+    ]
+)
+
+moderation_product_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Отклонить", callback_data="reject_moderation_products")],
+        [InlineKeyboardButton(text="Одобрить", callback_data="approve_moderation_products")],
+        [InlineKeyboardButton(text="Назад", callback_data="back_from_moderation_product")]
+    ]
+)
+
+moderation_passport_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Отклонить", callback_data="reject_moderation_passports")],
+        [InlineKeyboardButton(text="Одобрить", callback_data="approve_moderation_passports")],
+        [InlineKeyboardButton(text="Назад", callback_data="back_from_moderation_passport")]
     ]
 )
