@@ -49,23 +49,23 @@ services:
       - dubai_bot
 
 
-#  dubai_bot:
-#    build:
-#      context: .
-#      dockerfile: dockerfile
-#    volumes:
-#      - ./backend:/usr/app
-#    restart: always
-#    expose:
-#      - 8005
-#    ports:
-#      - "8005:8005"
-#    depends_on:
-#      postgresdb:
-#        condition: service_healthy
-#    command: sh -c "python3 main.py"
-#    networks:
-#      - dubai_bot
+  dubai_bot:
+    build:
+      context: .
+      dockerfile: dockerfile
+    volumes:
+      - ./backend:/usr/app
+    restart: always
+    expose:
+      - 8005
+    ports:
+      - "8005:8005"
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+    command: sh -c "python3 main.py"
+    networks:
+      - dubai_bot
 
 networks:
   dubai_bot:
