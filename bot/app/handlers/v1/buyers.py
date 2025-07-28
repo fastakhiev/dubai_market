@@ -203,7 +203,6 @@ async def back_from_shop_buyer(callback: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     await callback.message.delete()
     product = await Product.objects.get(id=UUID(state_data["current_product"]["product_id"]))
-    await state.clear()
     send_photos = await callback.message.answer_media_group(media=[InputMediaPhoto(media=photo) for photo in product.photos])
     send_text = await callback.message.answer(
         f"Название: {product.title}\n"
