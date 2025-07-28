@@ -3,7 +3,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from app.keyboards.basic import basic, search_buttons, seller_buttons, categories_list_b, search_filters, shop_buttons, approve_block_shop_buttons, approve_block_seller_buttons, blocked_shop_buttons, blocked_seller_buttons, approve_block_product_buttons, statistics_buttons
-from app.states.states import SearchFilter, CurrentShop, CurrentOwner, RejectProduct, RejectPassport
+from app.states.states import SearchFilter, CurrentShop, CurrentOwner, RejectProduct, RejectPassport, ApproveProduct
 from app.models.shops import Shop
 from uuid import UUID
 from app.models.products import Product
@@ -61,7 +61,7 @@ async def search_with_filter(callback: CallbackQuery, state: FSMContext):
     await state.set_state(SearchFilter.message)
     await state.set_state(SearchFilter.type)
     await state.set_state(SearchFilter.filter)
-    message = await callback.message.edit_text(f"Поиск по {callback.data[:-2]}", reply_markup=search_buttons)
+    message = await callback.message.edit_text(f"<strong>Поиск по:</strong> {callback.data[:-2]}", reply_markup=search_buttons)
     await state.update_data(filter={"category": callback.data[:-2]}, message={
         "message_id": message.message_id
     }, type="products")
@@ -104,7 +104,7 @@ async def get_shop_owner(callback: CallbackQuery, state: FSMContext):
     })
     await callback.message.answer_photo(
         photo=f"https://dubaimarketbot.ru/get_image/{shop.user_id.passport}",
-        caption=f"Имя: {shop.user_id.full_name}\nТелефон: {shop.user_id.phone}\nДата регистрации: {shop.user_id.created_at}\nPassport: {shop.user_id.passport}\nСтатус: {'активен' if shop.user_id.is_active else 'забанен'}",
+        caption=f"<strong>Имя:</strong> {shop.user_id.full_name}\n<strong>Телефон:</strong> {shop.user_id.phone}\n<strong>Дата регистрации:</strong> {shop.user_id.created_at}\n<strong>Passport:</strong> {shop.user_id.passport}\n<strong>Статус:</strong> {'активен' if shop.user_id.is_active else 'забанен'}",
         reply_markup=seller_buttons if shop.user_id.is_active else blocked_seller_buttons)
     await callback.answer()
 
@@ -129,7 +129,7 @@ async def shop_from_product (callback: CallbackQuery, state: FSMContext):
     await state.set_state(CurrentShop.current_shop)
     send_photos = await callback.message.answer_photo(
         photo=f"https://dubaimarketbot.ru/get_image/{shop.photo}",
-        caption=f"Название: {shop.name}\nСоциальные сети: {shop.social_networks}\nСтатус: {'активен' if shop.is_active else 'забанен'}",
+        caption=f"<strong>Название:</strong> {shop.name}\n<strong>Социальные сети:</strong> {shop.social_networks}\n<strong>Статус:</strong> {'активен' if shop.is_active else 'забанен'}",
         reply_markup=shop_buttons if shop.is_active else blocked_shop_buttons
     )
     messages_ids.append(send_photos.message_id)
@@ -151,7 +151,7 @@ async def go_to_search(callback: CallbackQuery, state: FSMContext):
     await state.set_state(SearchFilter.type)
     await state.set_state(SearchFilter.filter)
     await callback.message.delete()
-    message = await callback.message.answer(f"Поиск по {data['current_shop']['shop_name']}", reply_markup=search_buttons)
+    message = await callback.message.answer(f"<strong>Поиск по:</strong> {data['current_shop']['shop_name']}", reply_markup=search_buttons)
     await state.update_data(filter={"seller_id": data["current_shop"]["seller_id"]}, message={
         "message_id": message.message_id
     }, type="products")
@@ -347,13 +347,13 @@ async def get_statistics(callback: CallbackQuery):
             stats[product.category]["inactive"] += 1
 
     result_products = "\n".join(
-        f"{category}: активных={counts['active']}, неактивных={counts['inactive']}"
+        f"<strong>{category}:</strong> активных={counts['active']}, неактивных={counts['inactive']}"
         for category, counts in stats.items()
     )
     await callback.message.delete()
     await callback.answer()
     await callback.message.answer(
-        text=f"Количество продавцов и  покупателей: {count_users}\n{result_products}",
+        text=f"<strong>Количество продавцов и  покупателей:</strong> {count_users}\n{result_products}",
         reply_markup=statistics_buttons
     )
 
@@ -414,15 +414,26 @@ async def approve_moderation_products(callback: CallbackQuery, state: FSMContext
             }
         }
     )
+    await state.set_state(ApproveProduct.telegram_id)
+    await state.update_data(telegram_id=product.seller_id.telegram_id)
+    await state.set_state(ApproveProduct.problem_approve_product)
+    await callback.message.answer("Введите комментарий")
+    await callback.answer()
+
+
+@router.message(ApproveProduct.problem_approve_product)
+async def enter_problem_product(message: Message, state: FSMContext):
+    data = await state.get_data()
+    await state.clear()
+    await client_bot.send_message(chat_id=str(data["telegram_id"]),
+                                  text=f"Ваш товар прошел проверку\n<strong>Комментарий:</strong> {message.text}")
     await state.set_state(SearchFilter.message)
     await state.set_state(SearchFilter.type)
     await state.set_state(SearchFilter.filter)
-    message = await callback.message.answer("Вы одобрили товар\nТовары на модерации", reply_markup=search_buttons)
+    message = await message.answer("Вы отклонили товар\nТовары на модерации", reply_markup=search_buttons)
     await state.update_data(filter={}, message={
-            "message_id": message.message_id
-        }, type="moderation_products")
-    await client_bot.send_message(chat_id=str(product.seller_id.telegram_id), text=f"Ваш товар {product.title} прошел проверку")
-    await callback.answer()
+        "message_id": message.message_id
+    }, type="moderation_products")
 
 
 @router.callback_query(F.data == "reject_moderation_products")
@@ -458,7 +469,7 @@ async def enter_problem_product(message: Message, state: FSMContext):
     data = await state.get_data()
     await state.clear()
     await client_bot.send_message(chat_id=str(data["telegram_id"]),
-                                  text=f"Ваш товар не прошел проверку\nПричина: {message.text}")
+                                  text=f"Ваш товар не прошел проверку\n<strong>Причина:</strong> {message.text}")
     await state.set_state(SearchFilter.message)
     await state.set_state(SearchFilter.type)
     await state.set_state(SearchFilter.filter)
@@ -555,12 +566,13 @@ async def reject_moderation_products(callback: CallbackQuery, state: FSMContext)
     await callback.message.answer("Введите причину отказа")
     await callback.answer()
 
+
 @router.message(RejectPassport.problem_passport)
 async def enter_problem_passport(message: Message, state: FSMContext):
     data = await state.get_data()
     await state.clear()
     await client_bot.send_message(chat_id=str(data["telegram_id"]),
-                                  text=f"Ваш паспорт не прошел проверку\nПричина: {message.text}")
+                                  text=f"Ваш паспорт не прошел проверку\n<strong>Причина:</strong> {message.text}")
     await state.set_state(SearchFilter.message)
     await state.set_state(SearchFilter.type)
     await state.set_state(SearchFilter.filter)

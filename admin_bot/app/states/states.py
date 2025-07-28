@@ -23,6 +23,12 @@ class RejectProduct(StatesGroup):
     problem_product = State()
     telegram_id = State()
 
+
 class RejectPassport(StatesGroup):
     problem_passport = State()
+    telegram_id = State()
+
+
+class ApproveProduct(StatesGroup):
+    problem_approve_product = State()
     telegram_id = State()

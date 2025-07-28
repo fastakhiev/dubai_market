@@ -157,11 +157,15 @@ async def inline_search(inline_query: InlineQuery, state: FSMContext):
     results = []
     for hit in response["hits"]["hits"]:
         product = hit["_source"]
+        if data['message']['type'] == 'seller':
+            otv = f"Статус: {'активен' if product['is_active'] else 'забанен' if product['is_moderation'] is False else 'На проверке'}"
+        else:
+            otv = f"Адрес: {product['location']}"
         results.append(
             InlineQueryResultArticle(
                 id=str(product["id"]),
                 title=f'{product["title"]}, {product["price"]} {product["currency"]}',
-                description=f"{product['description']}, Статус: {'активен' if product['is_active'] else 'забанен' if data['message']['type'] == 'seller' and product['is_moderation'] is False else 'На проверке'}",
+                description=f"{product['description']}, {otv}",
                 thumb_url=f"https://dubaimarketbot.ru/get_image/{product['thumbnail']}",
                 input_message_content=InputTextMessageContent(
                     message_text=f"product_{product['id']}:{data['message']['type']}"

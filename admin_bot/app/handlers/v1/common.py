@@ -23,7 +23,7 @@ async def get_shop_by_id(message: Message, state: FSMContext):
         await bot.delete_message(chat_id=message.chat.id, message_id=data["message"]["message_id"])
         send_photos = await message.answer_photo(
             photo=f"https://dubaimarketbot.ru/get_image/{shop.photo}",
-            caption=f"Название: {shop.name}\nСоциальные сети: {shop.social_networks}\nСтатус: {'активен' if shop.is_active else 'забанен'}",
+            caption=f"<strong>Название:</strong> {shop.name}\n<strong>Социальные сети:</strong> {shop.social_networks}\n<strong>Статус:</strong> {'активен' if shop.is_active else 'забанен'}",
             reply_markup=shop_buttons if shop.is_active else blocked_shop_buttons
         )
         messages_ids.append(send_photos.message_id)
@@ -50,10 +50,11 @@ async def get_product_by_id(message: Message, state: FSMContext):
     await bot.delete_message(chat_id=message.chat.id, message_id=data["message"]["message_id"])
     send_photos = await message.answer_media_group(media=[InputMediaPhoto(media=f"https://dubaimarketbot.ru/get_image/{photo}") for photo in product.photos])
     send_text = await message.answer(
-        f"Название: {product.title}\n"
-        f"Описание: {product.description}\n"
-        f"Цена: {product.price} {product.currency}\n"
-        f"Статус: {'активен' if product.is_active else 'забанен'}",
+        f"<strong>Название:</strong> {product.title}\n"
+        f"<strong>Описание:</strong> {product.description}\n"
+        f"<strong>Цена:</strong> {product.price} {product.currency}\n"
+        f"<strong>Статус:</strong> {'активен' if product.is_active else 'забанен'}"
+        f"<strong>Адрес:</strong> {product.location}",
         reply_markup=product_buttons if product.is_active else blocked_product_buttons
     )
     messages_ids.extend([msg.message_id for msg in send_photos])
@@ -77,9 +78,10 @@ async def get_product_by_id(message: Message, state: FSMContext):
     await bot.delete_message(chat_id=message.chat.id, message_id=data["message"]["message_id"])
     send_photos = await message.answer_media_group(media=[InputMediaPhoto(media=f"https://dubaimarketbot.ru/get_image/{photo}") for photo in product.photos])
     send_text = await message.answer(
-        f"Название: {product.title}\n"
-        f"Описание: {product.description}\n"
-        f"Цена: {product.price} {product.currency}\n",
+        f"<strong>Название:</strong> {product.title}\n"
+        f"<strong>Описание:</strong> {product.description}\n"
+        f"<strong>Цена:</strong> {product.price} {product.currency}\n"
+        f"<strong>Адрес:</strong> {product.location}",
         reply_markup=moderation_product_buttons
     )
     messages_ids.extend([msg.message_id for msg in send_photos])
@@ -103,9 +105,9 @@ async def get_product_by_id(message: Message, state: FSMContext):
     await bot.delete_message(chat_id=message.chat.id, message_id=data["message"]["message_id"])
     send_text = await message.answer_photo(
         photo=f"https://dubaimarketbot.ru/get_image/{shop.user_id.passport}",
-        caption=f"Название: {shop.name}\n"
-        f"Описание: {shop.description}\n"
-        f"Социальные сети: {shop.social_networks}\n",
+        caption=f"<strong>Название:</strong> {shop.name}\n"
+        f"<strong>Описание:</strong> {shop.description}\n"
+        f"<strong>Социальные сети:</strong> {shop.social_networks}\n",
         reply_markup=moderation_passport_buttons
     )
     messages_ids.append(send_text.message_id)

@@ -49,7 +49,7 @@ async def get_my_shop(callback: CallbackQuery):
     await callback.message.edit_media(
         media=InputMediaPhoto(
             media=shop.photo,
-            caption=f"Название: {shop.name}\nСоциальные сети: {shop.social_networks}\n \n\n{final_message}"
+            caption=f"<strong>Название:</strong> {shop.name}\n<strong>Социальные сети:</strong> {shop.social_networks}\n \n\n{final_message}"
         ),
         reply_markup=inline_back_button if shop.is_verified or shop.is_moderation else my_shop_profile
     )
@@ -161,8 +161,15 @@ async def create_product_enter_currency(callback: CallbackQuery, state: FSMConte
     await callback.answer()
     await state.update_data(currency=callback.data)
     await callback.message.edit_reply_markup(reply_markup=None)
+    await state.set_state(CreateProduct.location)
+    await callback.message.answer("Укажите место сделки")
+
+
+@router.message(CreateProduct.location)
+async def create_product_enter_location(message: Message, state: FSMContext):
+    await state.update_data(location=message.text)
     await state.set_state(CreateProduct.photos)
-    await callback.message.answer("Загрузите до 10 фото одним сообщением")
+    await message.answer("Загрузите до 10 фото одним сообщением")
 
 
 @router.message(CreateProduct.photos)
@@ -179,11 +186,11 @@ async def create_product_upload_photos(
         photos = [message.photo[-1].file_id, message.photo[-1].file_id]
 
     if len(photos) > 10:
-        await message.answer("Вы можете загрузить не более 10 фото!")
+        await message.answer("Вы можете загрузить не более 10 фото!\nПервое фото будет отображаться в поиске товаров")
         return
 
     await state.update_data(photos=photos)
-    await message.answer(f"✅ Вы загрузили {len(photos)} фото.")
+    await message.answer(f"✅ <strong>Вы загрузили:</strong> {len(photos) - 1} фото.")
     await state.set_state(CreateProduct.category)
     await message.answer("Выберете категорию товара", reply_markup=categories_general)
 
@@ -206,6 +213,7 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
         photos=list(data["photos"]),
         thumbnail=thumbnail,
         category=data["category"],
+        location=data["location"],
         is_moderation=True,
         is_active=False
     )
@@ -224,6 +232,7 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
             "seller_id": str(product.seller_id.id),
             "thumbnail": product.thumbnail,
             "category": product.category,
+            "location": product.location,
             "is_moderation": True,
             "is_active": False
         })
@@ -234,7 +243,7 @@ async def create_product_enter_category(callback: CallbackQuery, state: FSMConte
         print("Ошибка при индексации:")
         traceback.print_exc()
     for i in config.ADMIN_TELEGRAM_IDS:
-        await admin_bot.send_message(chat_id=i, text=f"Новый товар {product.title}")
+        await admin_bot.send_message(chat_id=i, text=f"<strong>Новый товар:</strong> {product.title}")
 
     await callback.message.answer("Товар создан", reply_markup=seller_kb)
 
@@ -291,7 +300,7 @@ async def enter_comment_for_approve_order(message: Message, state: FSMContext):
     order.is_approve = True
     order.seller_comment = state_data["seller_comment"]
     await order.update()
-    await bot.send_message(chat_id=order.buyer_id.telegram_id, text=f"Продавец подтвердил заказ\nОтвет: {state_data['seller_comment']}", reply_markup=notification_button)
+    await bot.send_message(chat_id=order.buyer_id.telegram_id, text=f"Продавец подтвердил заказ\n<strong>Ответ:</strong> {state_data['seller_comment']}", reply_markup=notification_button)
     await state.clear()
     await message.answer("Вы подтвердили заказ", reply_markup=ReplyKeyboardRemove())
     await message.answer("Выбрете действие", reply_markup=seller_kb)
@@ -312,7 +321,7 @@ async def enter_answer_question(message: Message, state: FSMContext):
     question = await Question.objects.select_related("buyer_id").get(id=UUID(state_data["current_question"]["question_id"]))
     question.answer = state_data["answer"]
     await question.update()
-    await bot.send_message(chat_id=question.buyer_id.telegram_id, text=f"Продавец ответил на вопрос\nОтвет: {state_data['answer']}", reply_markup=notification_button)
+    await bot.send_message(chat_id=question.buyer_id.telegram_id, text=f"Продавец ответил на вопрос\n<strong>Ответ:</strong> {state_data['answer']}", reply_markup=notification_button)
     await state.clear()
     await message.answer("Вы ответили на вопрос", reply_markup=ReplyKeyboardRemove())
     await message.answer("Выбрете действие", reply_markup=seller_kb)
@@ -323,5 +332,5 @@ async def upload_passport_later(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.delete()
     await callback.answer()
-    await callback.message.answer("Загрузите фото вашего паспорта для получения отметки «Верифицированный продавец»")
+    await callback.message.answer("Загрузите фото вашего паспорта для получения отметки <strong>«Верифицированный продавец»</strong>")
     await state.set_state(RegSeller.passport)

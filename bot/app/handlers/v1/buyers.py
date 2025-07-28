@@ -47,7 +47,7 @@ async def back_from_search(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(lambda c: c.data in categories_list_b)
 async def search_with_filter(callback: CallbackQuery, state: FSMContext):
     await state.set_state(SearchFilter.filter)
-    message = await callback.message.edit_text(f"Поиск по {callback.data[:-2]}", reply_markup=search_buttons)
+    message = await callback.message.edit_text(f"<strong>Поиск по:</strong> {callback.data[:-2]}", reply_markup=search_buttons)
     await state.update_data(filter={"category": callback.data[:-2]}, message={
         "type": "buyer",
         "message_id": message.message_id
@@ -61,7 +61,7 @@ async def back_from_product_buyer(callback: CallbackQuery, state: FSMContext):
     for i in state_data["current_product"]["messages_ids"]:
         await bot.delete_message(chat_id=state_data["current_product"]["chat_id"], message_id=i)
 
-    message = await callback.message.answer(f"Поиск по {state_data['filter']['category'] if state_data['filter'] else 'всему'}", reply_markup=search_buttons)
+    message = await callback.message.answer(f"<strong>Поиск по:</strong> {state_data['filter']['category'] if state_data['filter'] else 'всему'}", reply_markup=search_buttons)
     await state.update_data(filter=state_data["filter"], message={
         "type": "buyer",
         "message_id": message.message_id
@@ -190,9 +190,9 @@ async def get_seller_from_product(callback: CallbackQuery, state: FSMContext):
     shop = await Shop.objects.select_related("user_id").get(user_id__id=product.seller_id)
     await callback.message.answer_photo(
         photo=f"https://dubaimarketbot.ru/get_image/{shop.photo}",
-        caption=f"Название: {shop.name}\n"
-        f"Описание: {shop.description}\n"
-        f"Социальные сети: {shop.social_networks}\n"
+        caption=f"<strong>Название:</strong> {shop.name}\n"
+        f"<strong>Описание:</strong> {shop.description}\n"
+        f"<strong>Социальные сети:</strong> {shop.social_networks}\n"
         f"{'Верифицированный продавец' if shop.is_verified else 'Не верифицированный продавец'}",
         reply_markup=back_from_shop_buyer_buttons
     )
@@ -205,9 +205,9 @@ async def back_from_shop_buyer(callback: CallbackQuery, state: FSMContext):
     product = await Product.objects.get(id=UUID(state_data["current_product"]["product_id"]))
     send_photos = await callback.message.answer_media_group(media=[InputMediaPhoto(media=photo) for photo in product.photos])
     send_text = await callback.message.answer(
-        f"Название: {product.title}\n"
-        f"Описание: {product.description}\n"
-        f"Цена: {product.price} {product.currency}\n",
+        f"<strong>Название:</strong> {product.title}\n"
+        f"<strong>Описание:</strong> {product.description}\n"
+        f"<strong>Цена:</strong> {product.price} {product.currency}\n",
         reply_markup=product_buttons
     )
     messages_ids = []

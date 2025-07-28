@@ -17,6 +17,7 @@ class Product(ormar.Model):
     photos: list = ormar.JSON(nullable=True)
     thumbnail: str = ormar.String(nullable=True, max_length=1000)
     category: str = ormar.String(max_length=100, nullable=False)
+    location: str = ormar.String(max_length=255, nullable=False)
     created_at: datetime = ormar.DateTime(nullable=False, default=datetime.now())
     updated_at: datetime = ormar.DateTime(nullable=False, default=datetime.now())
     is_moderation: bool = ormar.Boolean(nullable=False)

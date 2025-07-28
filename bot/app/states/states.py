@@ -30,6 +30,7 @@ class CreateProduct(StatesGroup):
     currency = State()
     seller_id = State()
     status = State()
+    location = State()
     photos = State()
     category = State()
 

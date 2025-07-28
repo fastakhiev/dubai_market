@@ -83,7 +83,7 @@ def fetch_pg_data(batch_size=BATCH_SIZE):
     offset = 0
     while True:
         query = f"""
-        SELECT id, title, description, price, currency, seller_id, thumbnail, category, is_active, is_moderation
+        SELECT id, title, description, price, currency, seller_id, thumbnail, category, location, is_active, is_moderation
         FROM products
         LIMIT {batch_size} OFFSET {offset};
         """

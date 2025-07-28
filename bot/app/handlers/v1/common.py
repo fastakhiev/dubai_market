@@ -35,11 +35,11 @@ async def get_question_by_id(message: Message, state: FSMContext):
             keyboard = inline_back_buyer_from_order
         send_text = await message.answer_photo(
             photo=f"https://dubaimarketbot.ru/get_image/{question.product_id.thumbnail}",
-            caption=f"Название: {question.product_id.title}\n"
-            f"Описание: {question.product_id.description}\n"
-            f"Цена: {question.product_id.price} {question.product_id.currency}\n"
-            f"Вопрос: {question.question}\n"
-            f"Ответ: {question.answer if question.answer else 'Нет ответа'}\n",
+            caption=f"<strong>Название:</strong> {question.product_id.title}\n"
+            f"<strong>Описание:</strong> {question.product_id.description}\n"
+            f"<strong>Цена:</strong> {question.product_id.price} {question.product_id.currency}\n"
+            f"<strong>Вопрос:</strong> {question.question}\n"
+            f"<strong>Ответ:</strong> {question.answer if question.answer else 'Нет ответа'}\n",
             reply_markup=keyboard
         )
         messages_ids.append(send_text.message_id)
@@ -73,13 +73,13 @@ async def get_order_by_id(message: Message, state: FSMContext):
             keyboard = inline_back_buyer_from_order
         send_text = await message.answer_photo(
             photo=f"https://dubaimarketbot.ru/get_image/{order.product_id.thumbnail}",
-            caption=f"Название: {order.product_id.title}\n"
-            f"Описание: {order.product_id.description}\n"
-            f"Цена: {order.product_id.price} {order.product_id.currency}\n"
-            f"Адрес: {order.destination}\n"
-            f"Комментарий: {order.buyer_comment}\n"
-            f"Ответ продавца: {order.seller_comment if order.seller_comment else '-'}\n"
-            f"Статус: {'Подтвержден' if order.is_approve else 'Ожидает подтверждения'}",
+            caption=f"<strong>Название:</strong> {order.product_id.title}\n"
+            f"<strong>Описание:</strong> {order.product_id.description}\n"
+            f"<strong>Цена:</strong> {order.product_id.price} {order.product_id.currency}\n"
+            f"<strong>Адрес:</strong> {order.destination}\n"
+            f"<strong>Комментарий:</strong> {order.buyer_comment}\n"
+            f"<strong>Ответ продавца:</strong> {order.seller_comment if order.seller_comment else '-'}\n"
+            f"<strong>Статус:</strong> {'Подтвержден' if order.is_approve else 'Ожидает подтверждения'}",
             reply_markup=keyboard
         )
         messages_ids.append(send_text.message_id)
@@ -109,9 +109,10 @@ async def get_product_by_id(message: Message, state: FSMContext):
         else:
             keyboard = product_inline_buttons_seller
         send_text = await message.answer(
-            f"Название: {product.title}\n"
-            f"Описание: {product.description}\n"
-            f"Цена: {product.price} {product.currency}\n"
+            f"<strong>Название:</strong> {product.title}\n"
+            f"<strong>Описание:</strong> {product.description}\n"
+            f"<strong>Цена:</strong> {product.price} {product.currency}\n"
+            f"<strong>Адрес:</strong> {product.location}"
             f"{'Это ваш товар' if user.id == product.seller_id.id else ''}",
             reply_markup=keyboard
         )

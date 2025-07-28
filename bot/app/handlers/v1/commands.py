@@ -43,12 +43,12 @@ async def enter_social_networks(message: Message, state: FSMContext):
     await state.set_state(CreateShop.description)
     await message.answer("Добавьте описание своего профиля")
 
+
 @router.message(CreateShop.description)
 async def enter_description_shop(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await state.set_state(CreateShop.photo)
     await message.answer("Загрузите фото вашего профиля")
-
 
 
 @router.message(CreateShop.photo)
