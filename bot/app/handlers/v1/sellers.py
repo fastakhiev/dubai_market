@@ -12,7 +12,7 @@ from app.models.products import Product
 from app.models.users import User
 from app.models.orders import Order
 from app.models.questions import Question
-from app.keyboards.seller import currency, my_products
+from app.keyboards.seller import currency, my_products, my_my_products
 from app.core.bot import bot
 from app.core.admin_bot import admin_bot
 from app.core import config
@@ -62,7 +62,7 @@ async def get_my_products(callback: CallbackQuery, state: FSMContext):
     await state.set_state(SearchFilter.filter)
     await state.set_state(SearchFilter.message)
     user = await User.objects.get(telegram_id=str(callback.from_user.id))
-    message = await callback.message.edit_text("Нажмите для вывода", reply_markup=my_products)
+    message = await callback.message.edit_text("Нажмите для вывода", reply_markup=my_my_products)
     await state.update_data(filter={"seller_id": str(user.id)}, message={
         "type": "seller",
         "message_id": message.message_id
@@ -88,7 +88,7 @@ async def back_from_product_sel(callback: CallbackQuery, state: FSMContext):
     for i in state_data["current_product"]["messages_ids"]:
         await bot.delete_message(chat_id=state_data["current_product"]["chat_id"], message_id=i)
 
-    message = await callback.message.answer("Нажмите для вывода", reply_markup=my_products)
+    message = await callback.message.answer("Нажмите для вывода", reply_markup=my_my_products)
     await state.update_data(filter=state_data["filter"], message={
         "type": "seller",
         "message_id": message.message_id

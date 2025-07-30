@@ -102,10 +102,15 @@ async def get_shop_owner(callback: CallbackQuery, state: FSMContext):
         "id": str(shop.user_id.id),
         "name": shop.user_id.full_name,
     })
-    await callback.message.answer_photo(
-        photo=f"https://dubaimarketbot.ru/get_image/{shop.user_id.passport}",
-        caption=f"<strong>Имя:</strong> {shop.user_id.full_name}\n<strong>Телефон:</strong> {shop.user_id.phone}\n<strong>Дата регистрации:</strong> {shop.user_id.created_at}\n<strong>Passport:</strong> {shop.user_id.passport}\n<strong>Статус:</strong> {'активен' if shop.user_id.is_active else 'забанен'}",
-        reply_markup=seller_buttons if shop.user_id.is_active else blocked_seller_buttons)
+    if shop.user_id.passport is not None:
+        await callback.message.answer_photo(
+            photo=f"https://dubaimarketbot.ru/get_image/{shop.user_id.passport}",
+            caption=f"<strong>Имя:</strong> {shop.user_id.full_name}\n<strong>Телефон:</strong> {shop.user_id.phone}\n<strong>Дата регистрации:</strong> {shop.user_id.created_at}\n<strong>Passport:</strong> {shop.user_id.passport}\n<strong>Статус:</strong> {'активен' if shop.user_id.is_active else 'забанен'}",
+            reply_markup=seller_buttons if shop.user_id.is_active else blocked_seller_buttons)
+    else:
+        await callback.message.answer(
+            text=f"<strong>Имя:</strong> {shop.user_id.full_name}\n<strong>Телефон:</strong> {shop.user_id.phone}\n<strong>Дата регистрации:</strong> {shop.user_id.created_at}\n<strong>Passport:</strong> {shop.user_id.passport}\n<strong>Статус:</strong> {'активен' if shop.user_id.is_active else 'забанен'}",
+            reply_markup=seller_buttons if shop.user_id.is_active else blocked_seller_buttons)
     await callback.answer()
 
 

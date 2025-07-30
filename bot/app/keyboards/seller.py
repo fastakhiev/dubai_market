@@ -49,6 +49,14 @@ my_products = InlineKeyboardMarkup(
     ]
 )
 
+my_my_products = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Поиск", switch_inline_query_current_chat="")],
+        [InlineKeyboardButton(text="Создать товар", callback_data="create_product")],
+        [InlineKeyboardButton(text="Назад", callback_data="back")]
+    ]
+)
+
 currency = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="RUB", callback_data="RUB")],
